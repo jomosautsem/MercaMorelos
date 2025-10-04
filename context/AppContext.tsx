@@ -1,6 +1,8 @@
+
+
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, CartItem, User, Order, Message } from '../types';
-import { mockApi as api } from '../services/mockApi';
+import { api } from '../services/api';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -92,15 +94,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const [fetchedCustomers, fetchedOrders, fetchedMessages] = await Promise.all([
               api.getCustomers(),
               api.getAllOrders(),
-              api.getMessages(user.id),
+              api.getMessages(),
             ]);
             setCustomers(fetchedCustomers);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
           } else {
             const [fetchedOrders, fetchedMessages] = await Promise.all([
-               api.getMyOrders(user.id),
-               api.getMessages(user.id)
+               api.getMyOrders(),
+               api.getMessages()
             ]);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
@@ -135,11 +137,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const data = await api.login(email, password);
       if (data && data.token) {
-        const loggedInUser = data.user;
+        const { token, ...loggedInUser } = data;
         setUser(loggedInUser);
-        setToken(data.token);
+        setToken(token);
         localStorage.setItem('user', JSON.stringify(loggedInUser));
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', token);
         return loggedInUser;
       }
       return null;
@@ -154,11 +156,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const data = await api.register(userData);
        if (data && data.token) {
-        const newUser = data.user;
+        const { token, ...newUser } = data;
         setUser(newUser);
-        setToken(data.token);
+        setToken(token);
         localStorage.setItem('user', JSON.stringify(newUser));
-        localStorage.setItem('token', data.token);
+        localStorage.setItem('token', token);
         return newUser;
        }
        return null;
@@ -225,7 +227,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user || cart.length === 0) return false;
     setError(null);
     try {
-        const newOrder = await api.placeOrder(user.id, cart, user, cartTotal);
+        const newOrder = await api.placeOrder(cart, user, cartTotal);
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
@@ -247,7 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-        return await api.getOrderDetail(orderId, user.id, user.role);
+        return await api.getOrderDetail(orderId);
     } catch (e: any) {
         setError(e.message);
         return null;
@@ -258,12 +260,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        const success = await api.cancelOrder(orderId, user.id);
-        if(success) {
-            setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
-            // Refetch products to get updated stock
-            api.getProducts().then(setAllProducts);
-        }
+        await api.cancelOrder(orderId);
+        setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
+        // Refetch products to get updated stock
+        api.getProducts().then(setAllProducts);
     } catch (e: any) {
         setError(e.message);
     }
@@ -272,10 +272,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     setError(null);
     try {
-        const success = await api.updateOrderStatus(orderId, status);
-        if(success) {
-            setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: status } : o));
-        }
+        await api.updateOrderStatus(orderId, status);
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: status } : o));
     } catch (e: any) {
         setError(e.message);
     }
@@ -306,10 +304,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteProduct = async (productId: string) => {
     setError(null);
     try {
-        const success = await api.deleteProduct(productId);
-        if (success) {
-            setAllProducts(prev => prev.filter(p => p.id !== productId));
-        }
+        await api.deleteProduct(productId);
+        setAllProducts(prev => prev.filter(p => p.id !== productId));
     } catch (e: any) {
         setError(e.message);
     }
@@ -318,10 +314,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteCustomer = async (customerId: string) => {
     setError(null);
     try {
-        const success = await api.deleteCustomer(customerId);
-        if (success) {
-            setCustomers(prev => prev.filter(c => c.id !== customerId));
-        }
+        await api.deleteCustomer(customerId);
+        setCustomers(prev => prev.filter(c => c.id !== customerId));
     } catch (e: any) {
         setError(e.message);
     }
@@ -331,7 +325,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        const newMessage = await api.sendMessage(text, user.id, toId);
+        const newMessage = await api.sendMessage(text, toId);
         setMessages(prev => [...prev, newMessage]);
     } catch (e: any) {
         setError(e.message);
@@ -342,7 +336,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await api.markMessagesAsRead(user.id, fromId);
+        await api.markMessagesAsRead(fromId);
         setMessages(prev => prev.map(msg => (msg.toId === user?.id && msg.fromId === fromId && !msg.read) ? { ...msg, read: true } : msg));
     } catch (e: any) {
         setError(e.message);

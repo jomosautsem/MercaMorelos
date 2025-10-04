@@ -16,12 +16,12 @@ const CheckoutPage: React.FC = () => {
     setCardDetails({ ...cardDetails, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // In a real app, payment processing would happen here.
     
-    // placeOrder now returns a boolean indicating success
-    const orderPlacedSuccessfully = placeOrder(); 
+    // placeOrder now returns a boolean indicating success, await its result
+    const orderPlacedSuccessfully = await placeOrder(); 
     
     if (orderPlacedSuccessfully) {
         navigate('/confirmation');

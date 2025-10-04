@@ -4,13 +4,11 @@ import ProductCard from '../components/ProductCard';
 import { useAppContext } from '../context/AppContext';
 
 const HomePage: React.FC = () => {
-  const { allProducts } = useAppContext();
+  const { allProducts, loading, error } = useAppContext();
 
   const featuredProducts = useMemo(() => {
-    return allProducts.slice(0, 4); // Show first 4 as featured
+    return allProducts.slice(0, 8); // Show first 8 as featured
   }, [allProducts]);
-
-  const loading = allProducts.length === 0;
 
   return (
     <div>
@@ -29,13 +27,17 @@ const HomePage: React.FC = () => {
 
       <h2 className="text-3xl font-bold mb-6 text-center text-on-surface">Productos Destacados</h2>
       {loading ? (
-        <div className="text-center">Cargando productos...</div>
-      ) : (
+        <div className="text-center py-10">Cargando productos...</div>
+      ) : error ? (
+        <div className="text-center py-10 text-red-500 font-semibold">Error al cargar productos: {error}</div>
+      ) : featuredProducts.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredProducts.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
+      ) : (
+         <div className="text-center py-10 text-on-surface-secondary">No hay productos destacados en este momento.</div>
       )}
     </div>
   );
