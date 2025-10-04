@@ -1,28 +1,21 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Product } from '../types';
-import { getProducts } from '../services/mockApi';
 import ProductCard from '../components/ProductCard';
+import { useAppContext } from '../context/AppContext';
 
 const HomePage: React.FC = () => {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { allProducts } = useAppContext();
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      const allProducts = await getProducts();
-      setFeaturedProducts(allProducts.slice(0, 4)); // Show first 4 as featured
-      setLoading(false);
-    };
-    fetchProducts();
-  }, []);
+  const featuredProducts = useMemo(() => {
+    return allProducts.slice(0, 4); // Show first 4 as featured
+  }, [allProducts]);
+
+  const loading = allProducts.length === 0;
 
   return (
     <div>
       <div className="bg-primary text-white rounded-lg p-8 md:p-12 mb-12 text-center">
-        <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Bienvenido a MercaPago</h1>
+        <h1 className="text-4xl md:text-5xl font-extrabold mb-4">Bienvenido a MercaMorelos</h1>
         <p className="text-lg md:text-xl max-w-2xl mx-auto">Tu tienda de moda para Dama y Niño. Descubre las últimas tendencias y los mejores estilos.</p>
         <div className="mt-8 flex justify-center gap-4">
             <Link to="/category/dama" className="bg-white text-primary font-bold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors">

@@ -1,27 +1,21 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Product } from '../types';
-import { getProducts } from '../services/mockApi';
 import ProductCard from '../components/ProductCard';
+import { useAppContext } from '../context/AppContext';
 
 const ProductListPage: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: 'dama' | 'nino' }>();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
+  const { allProducts } = useAppContext();
+  
+  const products = useMemo(() => {
       if (categoryId) {
-          const fetchedProducts = await getProducts(categoryId);
-          setProducts(fetchedProducts);
+          return allProducts.filter(p => p.category === categoryId);
       }
-      setLoading(false);
-    };
-    fetchProducts();
-  }, [categoryId]);
+      return [];
+  }, [categoryId, allProducts]);
 
+  const loading = allProducts.length === 0;
   const title = categoryId === 'dama' ? 'Ropa de Dama' : 'Ropa de Niño';
 
   return (

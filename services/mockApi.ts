@@ -1,91 +1,338 @@
+import { Product, User, Order, Message, CartItem } from '../types';
 
-import { Product } from '../types';
+// Let's create some mock data.
 
-const products: Product[] = [
+const mockProducts: Product[] = [
+  // Ropa de Dama
   {
     id: '1',
     name: 'Vestido Floral de Verano',
     price: 49.99,
-    imageUrl: 'https://picsum.photos/seed/dama1/400/500',
+    imageUrl: 'https://picsum.photos/seed/dama1/400/400',
     category: 'dama',
-    description: 'Un vestido ligero y fresco perfecto para los días soleados. Hecho con 100% algodón orgánico.'
+    description: 'Un vestido ligero y fresco, perfecto para los días soleados. Con un estampado floral vibrante y un corte favorecedor.',
+    stock: 15,
   },
   {
     id: '2',
     name: 'Blusa de Seda Elegante',
-    price: 65.00,
-    imageUrl: 'https://picsum.photos/seed/dama2/400/500',
+    price: 39.50,
+    imageUrl: 'https://picsum.photos/seed/dama2/400/400',
     category: 'dama',
-    description: 'Blusa de seda con un corte moderno y sofisticado, ideal para la oficina o eventos especiales.'
+    description: 'Blusa de seda con un tacto suave y un brillo sutil. Ideal para la oficina o una salida nocturna.',
+    stock: 20,
   },
   {
     id: '3',
     name: 'Jeans Skinny de Tiro Alto',
-    price: 75.50,
-    imageUrl: 'https://picsum.photos/seed/dama3/400/500',
+    price: 55.00,
+    imageUrl: 'https://picsum.photos/seed/dama3/400/400',
     category: 'dama',
-    description: 'Jeans cómodos y elásticos que se ajustan perfectamente a tu figura. Un básico indispensable.'
+    description: 'Jeans ajustados que realzan la figura. El tejido elástico proporciona comodidad durante todo el día.',
+    stock: 10,
   },
   {
     id: '4',
-    name: 'Suéter de Cachemira',
-    price: 120.00,
-    imageUrl: 'https://picsum.photos/seed/dama4/400/500',
+    name: 'Falda Plisada Midi',
+    price: 45.00,
+    imageUrl: 'https://picsum.photos/seed/dama4/400/400',
     category: 'dama',
-    description: 'Suéter suave y cálido de pura cachemira, un lujo para los días fríos.'
+    description: 'Una falda midi versátil con un plisado delicado. Combínala con zapatillas o tacones para diferentes looks.',
+    stock: 8,
   },
+  // Ropa de Niño
   {
     id: '5',
-    name: 'Conjunto de Pijama de Algodón',
-    price: 35.99,
-    imageUrl: 'https://picsum.photos/seed/nino1/400/500',
+    name: 'Camiseta de Dinosaurios',
+    price: 15.99,
+    imageUrl: 'https://picsum.photos/seed/nino1/400/400',
     category: 'nino',
-    description: 'Pijama de dos piezas con divertido estampado de dinosaurios, hecho de algodón suave para un sueño confortable.'
+    description: 'Camiseta de algodón suave con un divertido estampado de dinosaurios que brilla en la oscuridad.',
+    stock: 25,
   },
   {
     id: '6',
-    name: 'Camiseta Gráfica de Superhéroe',
-    price: 19.99,
-    imageUrl: 'https://picsum.photos/seed/nino2/400/500',
+    name: 'Sudadera con Capucha y Orejas',
+    price: 25.00,
+    imageUrl: 'https://picsum.photos/seed/nino2/400/400',
     category: 'nino',
-    description: 'Camiseta de algodón con el logo de su superhéroe favorito. ¡Perfecta para la aventura diaria!'
+    description: 'Sudadera cálida y acogedora con orejitas de oso en la capucha. Perfecta para los días fríos.',
+    stock: 12,
   },
   {
     id: '7',
     name: 'Pantalones Cargo Resistentes',
-    price: 29.50,
-    imageUrl: 'https://picsum.photos/seed/nino3/400/500',
+    price: 22.50,
+    imageUrl: 'https://picsum.photos/seed/nino3/400/400',
     category: 'nino',
-    description: 'Pantalones cargo con múltiples bolsillos, ideales para jugar y explorar. Hechos para durar.'
+    description: 'Pantalones con múltiples bolsillos, ideales para las aventuras diarias de los más pequeños. Tejido duradero.',
+    stock: 30,
   },
   {
     id: '8',
-    name: 'Chamarra Impermeable',
-    price: 55.00,
-    imageUrl: 'https://picsum.photos/seed/nino4/400/500',
+    name: 'Vestido de Princesa con Tul',
+    price: 35.00,
+    imageUrl: 'https://picsum.photos/seed/nino4/400/400',
     category: 'nino',
-    description: 'Chamarra ligera e impermeable con capucha, perfecta para los días de lluvia y viento.'
+    description: 'Un vestido de ensueño con una falda de tul brillante y detalles de lentejuelas. Ideal para fiestas y ocasiones especiales.',
+    stock: 0,
   },
+  {
+    id: '9',
+    name: 'Chaqueta Vaquera Infantil',
+    price: 30.00,
+    imageUrl: 'https://picsum.photos/seed/nino5/400/400',
+    category: 'nino',
+    description: 'Una chaqueta vaquera clásica en tamaño infantil. Resistente y siempre a la moda.',
+    stock: 18,
+  },
+  {
+    id: '10',
+    name: 'Conjunto Deportivo de Algodón',
+    price: 28.00,
+    imageUrl: 'https://picsum.photos/seed/nino6/400/400',
+    category: 'nino',
+    description: 'Conjunto cómodo de sudadera y pantalón de chándal. Perfecto para jugar y estar cómodo en casa.',
+    stock: 22,
+  }
 ];
 
-const LATENCY = 500;
-
-export const getProducts = (category?: 'dama' | 'nino'): Promise<Product[]> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      if (category) {
-        resolve(products.filter(p => p.category === category));
-      } else {
-        resolve(products);
-      }
-    }, LATENCY);
-  });
+// More mock data for users, orders, etc. can be added here.
+const mockAdmin: User = {
+    id: 'admin-user',
+    firstName: 'Admin',
+    paternalLastName: 'Merca',
+    maternalLastName: 'Morelos',
+    email: 'jomosanano@gmail.com',
+    address: 'Admin Address 123',
+    role: 'admin',
 };
 
-export const getProductById = (id: string): Promise<Product | undefined> => {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            resolve(products.find(p => p.id === id));
-        }, LATENCY);
-    });
-};
+const mockCustomer: User = {
+    id: 'customer-1',
+    firstName: 'Juan',
+    paternalLastName: 'Perez',
+    maternalLastName: 'Gomez',
+    email: 'juan@example.com',
+    address: 'Calle Falsa 123, Colonia Centro',
+    role: 'customer',
+}
+
+let mockUsers: User[] = [mockAdmin, mockCustomer];
+
+let mockOrders: Order[] = [
+    {
+        id: 'order-1',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        estimatedDeliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        total: 89.49,
+        status: 'Enviado',
+        items: [
+            { ...mockProducts[4], quantity: 1 },
+            { ...mockProducts[1], quantity: 1 }
+        ],
+        shippingInfo: mockCustomer,
+    },
+    {
+        id: 'order-2',
+        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+        estimatedDeliveryDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        total: 55.00,
+        status: 'Entregado',
+        items: [
+            { ...mockProducts[2], quantity: 1 }
+        ],
+        shippingInfo: mockCustomer,
+    }
+];
+
+let mockMessages: Message[] = [
+    {
+        id: 'msg-1',
+        from: 'admin',
+        fromId: 'admin-user',
+        toId: 'customer-1',
+        text: '¡Hola! ¿En qué podemos ayudarte?',
+        timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        read: true,
+    },
+    {
+        id: 'msg-2',
+        from: 'customer',
+        fromId: 'customer-1',
+        toId: 'admin-user',
+        text: 'Hola, tengo una pregunta sobre mi pedido.',
+        timestamp: new Date(Date.now() - 59 * 60 * 1000).toISOString(),
+        read: false,
+    }
+];
+
+// Helper to simulate API delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Mock API functions
+export const mockApi = {
+    async getProducts(): Promise<Product[]> {
+        await delay(500);
+        return [...mockProducts];
+    },
+    async getProduct(id: string): Promise<Product | undefined> {
+        await delay(300);
+        return mockProducts.find(p => p.id === id);
+    },
+    async login(email: string, pass: string): Promise<{user: User, token: string} | null> {
+        await delay(500);
+        const user = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+        // For mock purposes, any password is valid for existing users
+        if (user) { 
+             return { user: {...user}, token: `mock-token-for-${user.id}`};
+        }
+        return null;
+    },
+    async register(userData: Omit<User, 'id' | 'role'>): Promise<{user: User, token: string} | null> {
+        await delay(500);
+        if(mockUsers.some(u => u.email.toLowerCase() === userData.email.toLowerCase())) {
+            return null; // User exists
+        }
+        const newUser: User = {
+            id: `user-${Date.now()}`,
+            ...userData,
+            role: 'customer'
+        };
+        mockUsers.push(newUser);
+        return { user: newUser, token: `mock-token-for-${newUser.id}` };
+    },
+    async getMyOrders(userId: string): Promise<Order[]> {
+        await delay(400);
+        return mockOrders.filter(o => o.shippingInfo.id === userId);
+    },
+    async getAllOrders(): Promise<Order[]> {
+         await delay(400);
+         return [...mockOrders];
+    },
+    async getOrderDetail(orderId: string, userId: string, userRole: 'admin' | 'customer'): Promise<Order | null> {
+        await delay(300);
+        const order = mockOrders.find(o => o.id === orderId);
+        if(!order) return null;
+        if(userRole === 'admin' || order.shippingInfo.id === userId) {
+            return {...order};
+        }
+        return null;
+    },
+    async placeOrder(userId: string, cart: CartItem[], shippingInfo: User, total: number): Promise<Order | null> {
+        await delay(800);
+        for (const item of cart) {
+            const product = mockProducts.find(p => p.id === item.id);
+            if (!product || product.stock < item.quantity) {
+                console.error(`Not enough stock for ${item.name}`);
+                return null;
+            }
+            product.stock -= item.quantity;
+        }
+        const newOrder: Order = {
+            id: `order-${Date.now()}`,
+            date: new Date().toISOString(),
+            estimatedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            total,
+            status: 'Procesando',
+            items: cart,
+            shippingInfo,
+        };
+        mockOrders.unshift(newOrder);
+        return newOrder;
+    },
+    async cancelOrder(orderId: string, userId: string): Promise<boolean> {
+        await delay(400);
+        const order = mockOrders.find(o => o.id === orderId && o.shippingInfo.id === userId);
+        if (order && order.status === 'Procesando') {
+            order.status = 'Cancelado';
+            // Restock items
+            for(const item of order.items) {
+                const product = mockProducts.find(p => p.id === item.id);
+                if (product) product.stock += item.quantity;
+            }
+            return true;
+        }
+        return false;
+    },
+    async updateOrderStatus(orderId: string, status: Order['status']): Promise<boolean> {
+        await delay(300);
+        const order = mockOrders.find(o => o.id === orderId);
+        if (order) {
+            order.status = status;
+            return true;
+        }
+        return false;
+    },
+    async addProduct(productData: Omit<Product, 'id'>): Promise<Product> {
+        await delay(500);
+        const newProduct: Product = {
+            id: `prod-${Date.now()}`,
+            ...productData
+        };
+        mockProducts.unshift(newProduct);
+        return newProduct;
+    },
+    async updateProduct(updatedProduct: Product): Promise<Product | null> {
+        await delay(500);
+        const index = mockProducts.findIndex(p => p.id === updatedProduct.id);
+        if (index > -1) {
+            mockProducts[index] = updatedProduct;
+            return updatedProduct;
+        }
+        return null;
+    },
+    async deleteProduct(productId: string): Promise<boolean> {
+        await delay(500);
+        const index = mockProducts.findIndex(p => p.id === productId);
+        if (index > -1) {
+            mockProducts.splice(index, 1);
+            return true;
+        }
+        return false;
+    },
+    async getCustomers(): Promise<User[]> {
+        await delay(400);
+        return mockUsers.filter(u => u.role === 'customer');
+    },
+    async deleteCustomer(customerId: string): Promise<boolean> {
+         await delay(500);
+        const index = mockUsers.findIndex(u => u.id === customerId);
+        if (index > -1) {
+            mockUsers.splice(index, 1);
+            return true;
+        }
+        return false;
+    },
+    async getMessages(userId: string): Promise<Message[]> {
+        await delay(200);
+        return mockMessages.filter(m => m.fromId === userId || m.toId === userId).map(m => {
+            const fromUser = mockUsers.find(u => u.id === m.fromId);
+            return {...m, from: fromUser?.role || 'customer' };
+        });
+    },
+    async sendMessage(text: string, fromId: string, toId: string): Promise<Message> {
+        await delay(250);
+        const fromUser = mockUsers.find(u => u.id === fromId);
+        const newMessage: Message = {
+            id: `msg-${Date.now()}`,
+            from: fromUser?.role || 'customer',
+            fromId,
+            toId,
+            text,
+            timestamp: new Date().toISOString(),
+            read: false,
+        };
+        mockMessages.push(newMessage);
+        return newMessage;
+    },
+    async markMessagesAsRead(userId: string, fromId: string): Promise<boolean> {
+        await delay(100);
+        mockMessages.forEach(m => {
+            if (m.toId === userId && m.fromId === fromId) {
+                m.read = true;
+            }
+        });
+        return true;
+    }
+}

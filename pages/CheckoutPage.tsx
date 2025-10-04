@@ -1,19 +1,33 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
 const CheckoutPage: React.FC = () => {
-  const { user, cart, cartTotal, clearCart } = useAppContext();
+  const { user, cart, cartTotal, placeOrder } = useAppContext();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState('debit');
+  const [cardDetails, setCardDetails] = useState({
+    number: '',
+    expiry: '',
+    cvc: '',
+  });
+
+  const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCardDetails({ ...cardDetails, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, this is where you would process the payment.
-    console.log('Processing payment...');
-    clearCart();
-    navigate('/confirmation');
+    // In a real app, payment processing would happen here.
+    
+    // placeOrder now returns a boolean indicating success
+    const orderPlacedSuccessfully = placeOrder(); 
+    
+    if (orderPlacedSuccessfully) {
+        navigate('/confirmation');
+    }
+    // If not successful, an alert is shown from within placeOrder
+    // and the user remains on the page to adjust their cart.
   };
 
   if (cart.length === 0) {
@@ -58,16 +72,34 @@ const CheckoutPage: React.FC = () => {
                         <div className="pl-8 space-y-4 mt-4">
                              <div>
                                 <label className="block text-sm font-medium text-on-surface-secondary">Número de Tarjeta</label>
-                                <input type="text" placeholder="**** **** **** ****" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" />
+                                <input
+                                    type="text"
+                                    name="number"
+                                    value={cardDetails.number}
+                                    onChange={handleCardChange}
+                                    placeholder="**** **** **** ****"
+                                    className="mt-1 block w-full bg-white text-gray-900 border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-on-surface-secondary">Vencimiento</label>
-                                    <input type="text" placeholder="MM/YY" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" />
+                                    <input
+                                        type="text"
+                                        name="expiry"
+                                        value={cardDetails.expiry}
+                                        onChange={handleCardChange}
+                                        placeholder="MM/YY"
+                                        className="mt-1 block w-full bg-white text-gray-900 border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" />
                                 </div>
                                 <div className="col-span-2">
                                      <label className="block text-sm font-medium text-on-surface-secondary">CVC</label>
-                                    <input type="text" placeholder="123" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" />
+                                    <input
+                                        type="text"
+                                        name="cvc"
+                                        value={cardDetails.cvc}
+                                        onChange={handleCardChange}
+                                        placeholder="123"
+                                        className="mt-1 block w-full bg-white text-gray-900 border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" />
                                 </div>
                             </div>
                         </div>

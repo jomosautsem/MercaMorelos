@@ -20,7 +20,7 @@ PORT=4000
 
 Connect to your PostgreSQL database using a client like `psql` or a GUI tool (e.g., pgAdmin, DBeaver).
 
-Copy the entire content of the `init.sql` file and run it against your database. This will create all the necessary tables (`users`, `products`, `orders`, etc.).
+You will need to run an `init.sql` script to create all the necessary tables (`users`, `products`, `orders`, etc.).
 
 ### 3. Install Dependencies
 
