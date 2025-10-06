@@ -1,12 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
+import { Order } from '../../types';
 
 const AdminOrderDetailPage: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
-    const { orders } = useAppContext();
+    const { getOrderDetail } = useAppContext();
+    const [order, setOrder] = useState<Order | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const order = orders.find(o => o.id === orderId);
+    useEffect(() => {
+        const fetchOrderDetails = async () => {
+            if (orderId) {
+                setLoading(true);
+                try {
+                    const fetchedOrder = await getOrderDetail(orderId);
+                    setOrder(fetchedOrder);
+                } catch (error) {
+                    console.error("Failed to fetch order details:", error);
+                    setOrder(null);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchOrderDetails();
+    }, [orderId, getOrderDetail]);
+
+    if (loading) {
+        return <div className="text-center py-20">Cargando detalles del pedido...</div>;
+    }
 
     if (!order) {
         return (

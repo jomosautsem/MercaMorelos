@@ -5,8 +5,8 @@ import { useAppContext } from '../../context/AppContext';
 const AdminProductsPage: React.FC = () => {
     const { allProducts, deleteProduct } = useAppContext();
 
-    const handleDelete = (productId: string, productName: string) => {
-        if (window.confirm(`¿Estás seguro de que quieres eliminar el producto "${productName}"?`)) {
+    const handleArchive = (productId: string, productName: string) => {
+        if (window.confirm(`¿Estás seguro de que quieres archivar el producto "${productName}"? No será visible en la tienda.`)) {
             deleteProduct(productId);
         }
     };
@@ -48,7 +48,7 @@ const AdminProductsPage: React.FC = () => {
                                 <td className="px-6 py-4 capitalize">{product.category}</td>
                                 <td className="px-6 py-4 flex items-center space-x-3">
                                     <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-primary hover:underline">Editar</Link>
-                                    <button onClick={() => handleDelete(product.id, product.name)} className="font-medium text-red-500 hover:underline">Eliminar</button>
+                                    <button onClick={() => handleArchive(product.id, product.name)} className="font-medium text-red-500 hover:underline">Archivar</button>
                                 </td>
                             </tr>
                         ))}

@@ -1,18 +1,42 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
+import { Order } from '../types';
 
 const OrderDetailPage: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
-    const { orders, cancelOrder } = useAppContext();
+    const { getOrderDetail, cancelOrder } = useAppContext();
+    const [order, setOrder] = useState<Order | null>(null);
+    const [loading, setLoading] = useState(true);
 
-    const order = orders.find(o => o.id === orderId);
-    
-    const handleCancelOrder = () => {
-        if (order && window.confirm('Are you sure you want to cancel this order?')) {
-            cancelOrder(order.id);
+    useEffect(() => {
+        const fetchOrderDetails = async () => {
+            if (orderId) {
+                setLoading(true);
+                try {
+                    const fetchedOrder = await getOrderDetail(orderId);
+                    setOrder(fetchedOrder);
+                } catch (error) {
+                    console.error("Failed to fetch order details:", error);
+                    setOrder(null);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        fetchOrderDetails();
+    }, [orderId, getOrderDetail]);
+
+    const handleCancelOrder = async () => {
+        if (order && window.confirm('¿Estás seguro de que quieres cancelar este pedido?')) {
+            await cancelOrder(order.id);
+            setOrder(prevOrder => prevOrder ? { ...prevOrder, status: 'Cancelado' } : null);
         }
     };
+
+    if (loading) {
+        return <div className="text-center py-20">Cargando detalles del pedido...</div>;
+    }
 
     if (!order) {
         return (

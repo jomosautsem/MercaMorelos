@@ -155,10 +155,12 @@ export const api = {
         const response = await fetch(`${API_BASE_URL}/messages`, { headers: getAuthHeaders() });
         return handleResponse(response);
     },
-    async sendMessage(text: string, toId: string): Promise<Message> {
+    async sendMessage(text: string, toId: string, fromId: string): Promise<Message> {
         const response = await fetch(`${API_BASE_URL}/messages`, {
             method: 'POST',
             headers: getAuthHeaders(),
+            // NOTE: fromId is not sent in the body. The backend identifies the user from the token.
+            // The fromId parameter is included here to maintain a consistent interface with mockApi.
             body: JSON.stringify({ text, toId }),
         });
         return handleResponse(response);

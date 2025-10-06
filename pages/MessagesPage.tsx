@@ -13,8 +13,11 @@ const MessagesPage: React.FC = () => {
 
     const conversation = useMemo(() => {
         if (!user) return [];
+        // FIX: The filter now correctly identifies messages from any admin by their role,
+        // rather than relying on a hardcoded and incorrect ID. This ensures messages
+        // sent by the admin appear in the customer's chat window.
         return messages
-            .filter(msg => (msg.fromId === user.id && msg.toId === ADMIN_ID) || (msg.fromId === ADMIN_ID && msg.toId === user.id))
+            .filter(msg => (msg.fromId === user.id) || (msg.toId === user.id && msg.from === 'admin'))
             .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
     }, [messages, user]);
 

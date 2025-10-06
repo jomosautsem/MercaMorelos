@@ -23,11 +23,25 @@ router.get('/', protect, async (req, res) => {
 // @desc    Send a message
 // @access  Private
 router.post('/', protect, async (req, res) => {
-    const { toId, text } = req.body;
+    let { toId, text } = req.body;
+    const fromUser = req.user;
+
     try {
+        // FIX: If a customer sends a message to the generic 'admin-user',
+        // find the actual admin ID in the database and use it as the recipient.
+        // This ensures messages from customers are correctly routed to the admin.
+        if (fromUser.role === 'customer' && toId === 'admin-user') {
+            const adminResult = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+            if (adminResult.rows.length > 0) {
+                toId = adminResult.rows[0].id;
+            } else {
+                return res.status(500).json({ message: 'No admin user configured to receive message.' });
+            }
+        }
+
         const newMessage = await pool.query(
             'INSERT INTO messages ("fromId", "toId", text) VALUES ($1, $2, $3) RETURNING *',
-            [req.user.id, toId, text]
+            [fromUser.id, toId, text]
         );
         
         const result = await pool.query('SELECT m.id, u_from.role as from, m."fromId", m."toId", m.text, m.timestamp, m.read FROM messages m JOIN users u_from ON m."fromId" = u_from.id WHERE m.id = $1', [newMessage.rows[0].id]);

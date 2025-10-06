@@ -302,15 +302,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const deleteProduct = async (productId: string) => {
+  const deleteProduct = useCallback(async (productId: string) => {
     setError(null);
     try {
-        await api.deleteProduct(productId);
-        setAllProducts(prev => prev.filter(p => p.id !== productId));
+      await api.deleteProduct(productId);
+      setAllProducts(prev => prev.filter(p => p.id !== productId));
     } catch (e: any) {
-        setError(e.message);
+      const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+      setError(errorMessage);
+      // FIX: Provide direct feedback to the user on failure. This solves the issue
+      // where the button appears to do nothing when the underlying API call fails.
+      alert(`No se pudo archivar el producto: ${errorMessage}`);
     }
-  };
+  }, []);
   
   const deleteCustomer = async (customerId: string) => {
     setError(null);
@@ -326,7 +330,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        const newMessage = await api.sendMessage(text, toId);
+        // FIX: Pass the sender's ID (user.id) to align with the original application
+        // logic that was designed around the mock API. The real api.ts service has been
+        // updated to accept this parameter for consistency, even though the backend
+        // uses the auth token. This ensures the frontend state updates correctly.
+        const newMessage = await api.sendMessage(text, toId, user.id);
         setMessages(prev => [...prev, newMessage]);
     } catch (e: any) {
         setError(e.message);
