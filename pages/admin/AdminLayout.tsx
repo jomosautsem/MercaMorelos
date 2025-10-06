@@ -3,13 +3,13 @@ import { NavLink, Outlet } from 'react-router-dom';
 
 const AdminLayout: React.FC = () => {
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center px-4 py-2 text-gray-700 rounded-md hover:bg-gray-200 ${
-      isActive ? 'bg-primary text-white hover:bg-primary' : ''
+    `flex items-center px-4 py-2.5 text-sm font-semibold rounded-md transition-colors duration-200 ${
+      isActive ? 'bg-primary text-background' : 'text-on-surface-secondary hover:bg-surface-light hover:text-on-surface'
     }`;
 
   return (
-    <div className="flex">
-      <aside className="w-64 bg-gray-100 p-4 rounded-lg shadow">
+    <div className="flex flex-col md:flex-row gap-8">
+      <aside className="md:w-64 bg-surface p-4 rounded-lg shadow-lg flex-shrink-0">
         <nav className="space-y-2">
           <NavLink to="/admin/dashboard" className={navLinkClasses}>
             Dashboard
@@ -25,7 +25,7 @@ const AdminLayout: React.FC = () => {
           </NavLink>
         </nav>
       </aside>
-      <main className="flex-1 p-6">
+      <main className="flex-1 bg-surface p-6 rounded-lg shadow-lg">
         <Outlet />
       </main>
     </div>

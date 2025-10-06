@@ -27,7 +27,6 @@ const ProductFormPage: React.FC = () => {
                 setFormData(productToEdit);
                 setImagePreview(productToEdit.imageUrl);
             } else {
-                // In a real app with direct navigation, you might fetch the product here
                 navigate('/admin/products');
             }
         }
@@ -69,31 +68,31 @@ const ProductFormPage: React.FC = () => {
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6">{isEditing ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h1>
-            <div className="max-w-2xl mx-auto bg-surface p-8 rounded-lg shadow-md">
+            <h1 className="text-3xl font-bold mb-6 tracking-tight">{isEditing ? 'Editar Producto' : 'Añadir Nuevo Producto'}</h1>
+            <div className="max-w-3xl mx-auto bg-surface-light p-8 rounded-lg shadow-md">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label htmlFor="name" className="block text-sm font-medium text-on-surface-secondary">Nombre del Producto</label>
-                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                        <input type="text" name="name" id="name" value={formData.name} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                     </div>
                      <div>
                         <label htmlFor="description" className="block text-sm font-medium text-on-surface-secondary">Descripción</label>
-                        <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={4} required className="mt-1 block w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                        <textarea name="description" id="description" value={formData.description} onChange={handleChange} rows={4} required className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="price" className="block text-sm font-medium text-on-surface-secondary">Precio</label>
-                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required min="0" step="0.01" className="mt-1 block w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required min="0" step="0.01" className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                         </div>
                          <div>
                             <label htmlFor="stock" className="block text-sm font-medium text-on-surface-secondary">Stock</label>
-                            <input type="number" name="stock" id="stock" value={formData.stock} onChange={handleChange} required min="0" className="mt-1 block w-full px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                            <input type="number" name="stock" id="stock" value={formData.stock} onChange={handleChange} required min="0" className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                        <div>
                             <label htmlFor="category" className="block text-sm font-medium text-on-surface-secondary">Categoría</label>
-                            <select name="category" id="category" value={formData.category} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white text-gray-900 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
+                            <select name="category" id="category" value={formData.category} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-surface bg-surface text-on-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                                 <option value="dama">Dama</option>
                                 <option value="nino">Niño</option>
                             </select>
@@ -102,15 +101,15 @@ const ProductFormPage: React.FC = () => {
                             <label className="block text-sm font-medium text-on-surface-secondary">Imagen del Producto</label>
                             <div className="mt-1 flex items-center space-x-4">
                                 {imagePreview && <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded"/>}
-                                <input type="file" id="imageUrl" name="imageUrl" onChange={handleImageChange} accept="image/*" className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary hover:file:bg-primary-100" />
+                                <input type="file" id="imageUrl" name="imageUrl" onChange={handleImageChange} accept="image/*" className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
                             </div>
                         </div>
                     </div>
-                    <div className="flex justify-end space-x-4">
-                        <button type="button" onClick={() => navigate('/admin/products')} className="py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                    <div className="flex justify-end space-x-4 pt-4">
+                        <button type="button" onClick={() => navigate('/admin/products')} className="py-2 px-4 border border-surface rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-light hover:bg-surface">
                             Cancelar
                         </button>
-                        <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-focus disabled:bg-gray-400">
+                        <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-background bg-primary hover:bg-primary-focus disabled:bg-gray-600">
                             {isLoading ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Producto')}
                         </button>
                     </div>

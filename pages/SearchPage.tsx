@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import ProductCard from '../components/ProductCard';
@@ -9,11 +8,11 @@ const SearchPage: React.FC = () => {
   return (
     <div>
       {searchQuery ? (
-        <h1 className="text-3xl font-bold mb-8 text-on-surface">
+        <h1 className="text-4xl font-extrabold mb-10 text-on-surface tracking-tight">
           Resultados para: <span className="text-primary">"{searchQuery}"</span>
         </h1>
       ) : (
-        <h1 className="text-3xl font-bold mb-8 text-on-surface">
+        <h1 className="text-4xl font-extrabold mb-10 text-on-surface tracking-tight">
           Por favor, ingrese un término de búsqueda.
         </h1>
       )}
@@ -26,10 +25,11 @@ const SearchPage: React.FC = () => {
         </div>
       ) : (
         searchQuery && (
-          <div className="text-center py-10">
-            <p className="text-lg text-on-surface-secondary">
+          <div className="text-center py-16">
+            <p className="text-xl text-on-surface-secondary">
               No se encontraron productos que coincidan con tu búsqueda.
             </p>
+             <p className="text-on-surface-secondary mt-2">Intenta con otras palabras clave.</p>
           </div>
         )
       )}

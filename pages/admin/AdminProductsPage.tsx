@@ -14,17 +14,17 @@ const AdminProductsPage: React.FC = () => {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Gestionar Productos</h1>
+                <h1 className="text-3xl font-bold tracking-tight">Gestionar Productos</h1>
                 <Link
                     to="/admin/products/new"
-                    className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-focus transition-colors"
+                    className="bg-primary text-background font-bold py-2 px-4 rounded-lg hover:bg-primary-focus transition-colors"
                 >
                     Añadir Producto
                 </Link>
             </div>
-            <div className="bg-surface rounded-lg shadow-md overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+                <table className="w-full text-sm text-left text-on-surface-secondary">
+                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
                         <tr>
                             <th scope="col" className="px-6 py-3">Imagen</th>
                             <th scope="col" className="px-6 py-3">Nombre</th>
@@ -36,11 +36,11 @@ const AdminProductsPage: React.FC = () => {
                     </thead>
                     <tbody>
                         {allProducts.map(product => (
-                            <tr key={product.id} className="bg-white border-b hover:bg-gray-50">
+                            <tr key={product.id} className="border-b border-surface hover:bg-surface">
                                 <td className="px-6 py-4">
                                     <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded"/>
                                 </td>
-                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                                <th scope="row" className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
                                     {product.name}
                                 </th>
                                 <td className="px-6 py-4">${product.price.toFixed(2)}</td>
@@ -48,7 +48,7 @@ const AdminProductsPage: React.FC = () => {
                                 <td className="px-6 py-4 capitalize">{product.category}</td>
                                 <td className="px-6 py-4 flex items-center space-x-3">
                                     <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-primary hover:underline">Editar</Link>
-                                    <button onClick={() => handleDelete(product.id, product.name)} className="font-medium text-red-600 hover:underline">Eliminar</button>
+                                    <button onClick={() => handleDelete(product.id, product.name)} className="font-medium text-red-500 hover:underline">Eliminar</button>
                                 </td>
                             </tr>
                         ))}

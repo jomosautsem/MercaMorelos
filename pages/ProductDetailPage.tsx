@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Product } from '../types';
 import { useAppContext } from '../context/AppContext';
-import { api } from '../services/api';
+import { mockApi as api } from '../services/mockApi';
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -20,7 +20,7 @@ const ProductDetailPage: React.FC = () => {
         setProduct(foundProduct);
         setLoading(false);
       } else {
-        // If not found (e.g., direct navigation), fetch from the real API
+        // If not found (e.g., direct navigation), fetch from mock API
         try {
           const fetchedProduct = await api.getProduct(productId);
           if (fetchedProduct) {
@@ -53,28 +53,30 @@ const ProductDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-surface rounded-lg shadow-lg p-6 md:p-10">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-        <div>
-          <img src={product.imageUrl} alt={product.name} className="w-full h-auto rounded-lg shadow-md object-cover" />
+    <div className="bg-surface rounded-lg shadow-2xl p-6 md:p-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
+        <div className="rounded-lg overflow-hidden shadow-lg">
+          <img src={product.imageUrl} alt={product.name} className="w-full h-auto object-cover" />
         </div>
         <div>
-          <h1 className="text-4xl font-extrabold text-on-surface mb-4">{product.name}</h1>
-          <p className="text-3xl font-bold text-primary mb-6">${product.price.toFixed(2)}</p>
-          <p className="text-on-surface-secondary text-lg mb-8">{product.description}</p>
+          <h1 className="text-4xl lg:text-5xl font-extrabold text-on-surface mb-4 tracking-tight">{product.name}</h1>
+          <p className="text-4xl font-bold text-primary mb-6">${product.price.toFixed(2)}</p>
+          <p className="text-on-surface-secondary text-base leading-relaxed mb-8">{product.description}</p>
           
-          <div className="mb-6">
-            {product.stock > 0 ? (
-                 <p className="text-sm font-semibold text-green-600">Disponible: {product.stock} unidades</p>
+          <div className="mb-8">
+            {product.stock > 5 ? (
+                 <p className="text-sm font-semibold text-green-400">En Stock</p>
+            ) : product.stock > 0 ? (
+                <p className="text-sm font-semibold text-yellow-400">¡Quedan pocas unidades! ({product.stock} disponibles)</p>
             ) : (
-                <p className="text-sm font-semibold text-red-600">Agotado</p>
+                <p className="text-sm font-semibold text-red-500">Agotado</p>
             )}
           </div>
           
           <button 
             onClick={() => addToCart(product)}
             disabled={isOutOfStock}
-            className="w-full sm:w-auto bg-primary text-white font-bold py-3 px-8 rounded-lg hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-transform duration-200 hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100"
+            className="w-full sm:w-auto bg-primary text-background font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/20"
           >
             {isOutOfStock ? (product.stock === 0 ? 'Agotado' : 'Stock máximo en carrito') : 'Añadir al carrito'}
           </button>

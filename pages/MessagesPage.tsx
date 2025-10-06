@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 
@@ -35,35 +34,35 @@ const MessagesPage: React.FC = () => {
 
     return (
         <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6">Mis Mensajes</h1>
-            <div className="flex flex-col h-[calc(100vh-14rem)] bg-surface rounded-lg shadow-md">
-                <div className="p-4 border-b">
+            <h1 className="text-4xl font-extrabold mb-6 tracking-tight">Mis Mensajes</h1>
+            <div className="flex flex-col h-[calc(100vh-16rem)] bg-surface rounded-lg shadow-2xl">
+                <div className="p-4 border-b border-surface-light">
                     <h2 className="text-xl font-bold">Chat con Soporte</h2>
                     <p className="text-sm text-on-surface-secondary">Aquí puedes comunicarte con nuestro equipo.</p>
                 </div>
                 <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto space-y-4">
                      {conversation.map(msg => (
                         <div key={msg.id} className={`flex ${msg.from === 'customer' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.from === 'customer' ? 'bg-primary text-white' : 'bg-gray-200 text-on-surface'}`}>
+                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow ${msg.from === 'customer' ? 'bg-primary text-background' : 'bg-surface-light text-on-surface'}`}>
                                 <p>{msg.text}</p>
-                                <p className="text-xs opacity-75 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString()}</p>
+                                <p className="text-xs opacity-75 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
                         </div>
                     ))}
                     {conversation.length === 0 && (
-                        <p className="text-center text-on-surface-secondary">No tienes mensajes. ¡Envía uno para empezar!</p>
+                        <p className="text-center text-on-surface-secondary pt-10">No tienes mensajes. ¡Envía uno para empezar!</p>
                     )}
                 </div>
-                <div className="p-4 border-t">
+                <div className="p-4 border-t border-surface-light">
                     <form onSubmit={handleSendMessage} className="flex space-x-2">
                         <input
                             type="text"
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder="Escribe tu respuesta..."
-                            className="flex-1 px-3 py-2 bg-white text-gray-900 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                            className="flex-1 px-4 py-2.5 bg-surface-light text-on-surface border border-surface-light rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                         />
-                        <button type="submit" className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-focus">
+                        <button type="submit" className="py-2 px-6 border border-transparent rounded-full shadow-sm text-sm font-bold text-background bg-primary hover:bg-primary-focus">
                             Enviar
                         </button>
                     </form>

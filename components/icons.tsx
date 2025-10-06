@@ -46,7 +46,7 @@ export const MinusIcon: React.FC = () => (
 );
 
 export const SearchIcon: React.FC = () => (
-    <Icon className="w-5 h-5 text-gray-400">
+    <Icon className="w-5 h-5 text-on-surface-secondary">
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
     </Icon>
 );
@@ -54,6 +54,18 @@ export const SearchIcon: React.FC = () => (
 export const ChevronDownIcon: React.FC<{className?: string}> = ({className}) => (
     <Icon className={className}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+    </Icon>
+);
+
+export const ChevronLeftIcon: React.FC<{className?: string}> = ({className}) => (
+    <Icon className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+    </Icon>
+);
+
+export const ChevronRightIcon: React.FC<{className?: string}> = ({className}) => (
+    <Icon className={className}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
     </Icon>
 );
 

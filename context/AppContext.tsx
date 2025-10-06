@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, CartItem, User, Order, Message } from '../types';
-import { api } from '../services/api';
+import { mockApi as api } from '../services/mockApi';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -94,15 +94,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const [fetchedCustomers, fetchedOrders, fetchedMessages] = await Promise.all([
               api.getCustomers(),
               api.getAllOrders(),
-              api.getMessages(),
+              api.getMessages(user.id),
             ]);
             setCustomers(fetchedCustomers);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
           } else {
             const [fetchedOrders, fetchedMessages] = await Promise.all([
-               api.getMyOrders(),
-               api.getMessages()
+               api.getMyOrders(user.id),
+               api.getMessages(user.id)
             ]);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
@@ -137,7 +137,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const data = await api.login(email, password);
       if (data && data.token) {
-        const { token, ...loggedInUser } = data;
+        const { user: loggedInUser, token } = data;
         setUser(loggedInUser);
         setToken(token);
         localStorage.setItem('user', JSON.stringify(loggedInUser));
@@ -156,7 +156,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const data = await api.register(userData);
        if (data && data.token) {
-        const { token, ...newUser } = data;
+        const { user: newUser, token } = data;
         setUser(newUser);
         setToken(token);
         localStorage.setItem('user', JSON.stringify(newUser));
@@ -227,7 +227,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user || cart.length === 0) return false;
     setError(null);
     try {
-        const newOrder = await api.placeOrder(cart, user, cartTotal);
+        const newOrder = await api.placeOrder(user.id, cart, user, cartTotal);
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
@@ -249,7 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-        return await api.getOrderDetail(orderId);
+        return await api.getOrderDetail(orderId, user.id, user.role);
     } catch (e: any) {
         setError(e.message);
         return null;
@@ -260,7 +260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await api.cancelOrder(orderId);
+        await api.cancelOrder(orderId, user.id);
         setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
         // Refetch products to get updated stock
         api.getProducts().then(setAllProducts);
@@ -325,7 +325,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        const newMessage = await api.sendMessage(text, toId);
+        const newMessage = await api.sendMessage(text, user.id, toId);
         setMessages(prev => [...prev, newMessage]);
     } catch (e: any) {
         setError(e.message);
@@ -336,7 +336,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await api.markMessagesAsRead(fromId);
+        await api.markMessagesAsRead(user.id, fromId);
         setMessages(prev => prev.map(msg => (msg.toId === user?.id && msg.fromId === fromId && !msg.read) ? { ...msg, read: true } : msg));
     } catch (e: any) {
         setError(e.message);

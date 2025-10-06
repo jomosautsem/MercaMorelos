@@ -5,20 +5,27 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MercaMorelos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Poppins', 'sans-serif'],
+            },
             colors: {
-              'primary': '#6366F1',
-              'primary-focus': '#4F46E5',
-              'secondary': '#EC4899',
-              'secondary-focus': '#DB2777',
-              'background': '#F9FAFB',
-              'surface': '#FFFFFF',
-              'on-surface': '#1F2937',
-              'on-surface-secondary': '#6B7280',
+              'primary': '#A3E635', // Vibrant Lime Green
+              'primary-focus': '#84CC16', // Darker Lime
+              'secondary': '#F97316', // Orange Accent
+              'secondary-focus': '#EA580C',
+              'background': '#0F172A', // Slate 900
+              'surface': '#1E293B', // Slate 800
+              'surface-light': '#334155', // Slate 700
+              'on-surface': '#F1F5F9', // Slate 100
+              'on-surface-secondary': '#94A3B8', // Slate 400
             },
           },
         },
@@ -36,7 +43,7 @@
 }
 </script>
 </head>
-  <body class="bg-background text-on-surface">
+  <body class="bg-background text-on-surface font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

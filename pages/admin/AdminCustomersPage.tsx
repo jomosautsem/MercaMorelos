@@ -14,10 +14,10 @@ const AdminCustomersPage: React.FC = () => {
     
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6">Clientes Registrados</h1>
-            <div className="bg-surface rounded-lg shadow-md overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <h1 className="text-3xl font-bold mb-6 tracking-tight">Clientes Registrados</h1>
+            <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+                <table className="w-full text-sm text-left text-on-surface-secondary">
+                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
                         <tr>
                             <th scope="col" className="px-6 py-3">Nombre</th>
                             <th scope="col" className="px-6 py-3">Correo Electrónico</th>
@@ -27,8 +27,8 @@ const AdminCustomersPage: React.FC = () => {
                     </thead>
                     <tbody>
                         {customers.map(customer => (
-                            <tr key={customer.id} className="bg-white border-b hover:bg-gray-50">
-                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                            <tr key={customer.id} className="border-b border-surface hover:bg-surface">
+                                <th scope="row" className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
                                     {`${customer.firstName} ${customer.paternalLastName}`}
                                 </th>
                                 <td className="px-6 py-4">{customer.email}</td>
@@ -41,7 +41,7 @@ const AdminCustomersPage: React.FC = () => {
                                         <EnvelopeIcon className="w-5 h-5 mr-1" />
                                         Contactar
                                     </Link>
-                                    <button onClick={() => handleDelete(customer.id, `${customer.firstName} ${customer.paternalLastName}`)} className="font-medium text-red-600 hover:underline">
+                                    <button onClick={() => handleDelete(customer.id, `${customer.firstName} ${customer.paternalLastName}`)} className="font-medium text-red-500 hover:underline">
                                         Eliminar
                                     </button>
                                 </td>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
@@ -11,22 +10,22 @@ const AdminOrdersPage: React.FC = () => {
         updateOrderStatus(orderId, status);
     };
 
-    const getStatusColor = (status: Order['status']) => {
+    const getStatusClasses = (status: Order['status']) => {
         switch (status) {
-            case 'Procesando': return 'bg-yellow-100 text-yellow-800';
-            case 'Enviado': return 'bg-blue-100 text-blue-800';
-            case 'Entregado': return 'bg-green-100 text-green-800';
-            case 'Cancelado': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+            case 'Procesando': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
+            case 'Enviado': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+            case 'Entregado': return 'bg-green-500/10 text-green-400 border-green-500/20';
+            case 'Cancelado': return 'bg-red-500/10 text-red-400 border-red-500/20';
+            default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
         }
     };
 
     return (
         <div>
-            <h1 className="text-3xl font-bold mb-6">Gestionar Pedidos</h1>
-            <div className="bg-surface rounded-lg shadow-md overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <h1 className="text-3xl font-bold mb-6 tracking-tight">Gestionar Pedidos</h1>
+            <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+                <table className="w-full text-sm text-left text-on-surface-secondary">
+                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
                         <tr>
                             <th scope="col" className="px-6 py-3">ID Pedido</th>
                             <th scope="col" className="px-6 py-3">Cliente</th>
@@ -38,8 +37,8 @@ const AdminOrdersPage: React.FC = () => {
                     </thead>
                     <tbody>
                         {orders.map(order => (
-                            <tr key={order.id} className="bg-white border-b hover:bg-gray-50">
-                                <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                            <tr key={order.id} className="border-b border-surface hover:bg-surface">
+                                <th scope="row" className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
                                     #{order.id}
                                 </th>
                                 <td className="px-6 py-4">{`${order.shippingInfo.firstName} ${order.shippingInfo.paternalLastName}`}</td>
@@ -49,12 +48,12 @@ const AdminOrdersPage: React.FC = () => {
                                     <select
                                         value={order.status}
                                         onChange={(e) => handleStatusChange(order.id, e.target.value as Order['status'])}
-                                        className={`p-1 rounded-md text-xs border-none focus:ring-0 ${getStatusColor(order.status)}`}
+                                        className={`p-1 rounded-md text-xs border focus:ring-1 focus:ring-primary ${getStatusClasses(order.status)}`}
                                     >
-                                        <option value="Procesando">Procesando</option>
-                                        <option value="Enviado">Enviado</option>
-                                        <option value="Entregado">Entregado</option>
-                                        <option value="Cancelado">Cancelado</option>
+                                        <option className="bg-surface text-on-surface" value="Procesando">Procesando</option>
+                                        <option className="bg-surface text-on-surface" value="Enviado">Enviado</option>
+                                        <option className="bg-surface text-on-surface" value="Entregado">Entregado</option>
+                                        <option className="bg-surface text-on-surface" value="Cancelado">Cancelado</option>
                                     </select>
                                 </td>
                                 <td className="px-6 py-4">
