@@ -232,7 +232,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
-            // Refetch products to get updated stock
+            // Refetch products to get updated stock and remove auto-archived items
             api.getProducts().then(setAllProducts);
             return true;
         }
@@ -295,7 +295,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
         const result = await api.updateProduct(updatedProduct);
         if(result){
-            setAllProducts(prev => prev.map(p => p.id === updatedProduct.id ? result : p));
+            // If the product is archived as a result of the update (e.g. stock becomes 0),
+            // remove it from the list. Otherwise, update it.
+            if (result.isArchived) {
+                setAllProducts(prev => prev.filter(p => p.id !== result.id));
+            } else {
+                setAllProducts(prev => prev.map(p => p.id === result.id ? result : p));
+            }
         }
     } catch (e: any) {
         setError(e.message);

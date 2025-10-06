@@ -6,6 +6,7 @@ export interface Product {
   category: 'dama' | 'nino';
   description: string;
   stock: number;
+  isArchived: boolean;
 }
 
 export interface CartItem extends Product {
