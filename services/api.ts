@@ -22,6 +22,26 @@ const handleResponse = async (response: Response) => {
     return resJson;
 };
 
+// --- Data Normalization Helpers ---
+
+const normalizeProduct = (product: any): Product => {
+    if (!product) return product;
+    return {
+        ...product,
+        price: product.price != null ? parseFloat(product.price) : 0,
+        stock: product.stock != null ? parseInt(String(product.stock), 10) : 0,
+    };
+};
+
+const normalizeOrder = (order: any): Order => {
+    if (!order) return order;
+    return {
+        ...order,
+        total: order.total != null ? parseFloat(order.total) : 0,
+        items: Array.isArray(order.items) ? order.items.map(normalizeProduct) : [],
+    };
+};
+
 export const api = {
     // AUTH
     async login(email: string, password: string): Promise<User & { token: string }> {
@@ -43,11 +63,13 @@ export const api = {
     // PRODUCTS
     async getProducts(): Promise<Product[]> {
         const response = await fetch(`${API_BASE_URL}/products`);
-        return handleResponse(response);
+        const products = await handleResponse(response);
+        return products.map(normalizeProduct);
     },
     async getProduct(id: string): Promise<Product> {
         const response = await fetch(`${API_BASE_URL}/products/${id}`);
-        return handleResponse(response);
+        const product = await handleResponse(response);
+        return normalizeProduct(product);
     },
     async addProduct(productData: Omit<Product, 'id'>): Promise<Product> {
          const response = await fetch(`${API_BASE_URL}/products`, {
@@ -55,7 +77,8 @@ export const api = {
             headers: getAuthHeaders(),
             body: JSON.stringify(productData),
         });
-        return handleResponse(response);
+        const newProduct = await handleResponse(response);
+        return normalizeProduct(newProduct);
     },
     async updateProduct(updatedProduct: Product): Promise<Product> {
          const response = await fetch(`${API_BASE_URL}/products/${updatedProduct.id}`, {
@@ -63,7 +86,8 @@ export const api = {
             headers: getAuthHeaders(),
             body: JSON.stringify(updatedProduct),
         });
-        return handleResponse(response);
+        const result = await handleResponse(response);
+        return normalizeProduct(result);
     },
     async deleteProduct(productId: string): Promise<{msg: string}> {
          const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
@@ -75,15 +99,18 @@ export const api = {
     // ORDERS
     async getMyOrders(): Promise<Order[]> {
         const response = await fetch(`${API_BASE_URL}/orders/myorders`, { headers: getAuthHeaders() });
-        return handleResponse(response);
+        const orders = await handleResponse(response);
+        return orders.map((o: any) => ({ ...o, total: parseFloat(o.total) }));
     },
     async getAllOrders(): Promise<Order[]> {
         const response = await fetch(`${API_BASE_URL}/orders`, { headers: getAuthHeaders() });
-        return handleResponse(response);
+        const orders = await handleResponse(response);
+        return orders.map((o: any) => ({ ...o, total: parseFloat(o.total) }));
     },
     async getOrderDetail(orderId: string): Promise<Order> {
         const response = await fetch(`${API_BASE_URL}/orders/${orderId}`, { headers: getAuthHeaders() });
-        return handleResponse(response);
+        const order = await handleResponse(response);
+        return normalizeOrder(order);
     },
     async placeOrder(cart: CartItem[], shippingInfo: User, total: number): Promise<Order> {
         const response = await fetch(`${API_BASE_URL}/orders`, {
@@ -91,14 +118,16 @@ export const api = {
             headers: getAuthHeaders(),
             body: JSON.stringify({ cartItems: cart, shippingInfo, total }),
         });
-        return handleResponse(response);
+        const newOrder = await handleResponse(response);
+        return normalizeOrder(newOrder);
     },
     async cancelOrder(orderId: string): Promise<Order> {
         const response = await fetch(`${API_BASE_URL}/orders/${orderId}/cancel`, {
             method: 'PUT',
             headers: getAuthHeaders(),
         });
-        return handleResponse(response);
+        const order = await handleResponse(response);
+        return { ...order, total: parseFloat(order.total) };
     },
     async updateOrderStatus(orderId: string, status: Order['status']): Promise<Order> {
         const response = await fetch(`${API_BASE_URL}/orders/${orderId}/status`, {
@@ -106,7 +135,8 @@ export const api = {
             headers: getAuthHeaders(),
             body: JSON.stringify({ status }),
         });
-        return handleResponse(response);
+        const order = await handleResponse(response);
+        return { ...order, total: parseFloat(order.total) };
     },
     // USERS / CUSTOMERS
     async getCustomers(): Promise<User[]> {
