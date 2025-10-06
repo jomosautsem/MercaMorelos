@@ -17,7 +17,7 @@ router.post('/register', async (req, res) => {
   const { firstName, paternalLastName, maternalLastName, email, address, password } = req.body;
 
   try {
-    const userExists = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const userExists = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     if (userExists.rows.length > 0) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    const result = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     const user = result.rows[0];
 
     if (user && (await bcrypt.compare(password, user.password))) {

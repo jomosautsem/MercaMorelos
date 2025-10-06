@@ -3,6 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { Product } from '../../types';
 
+type ProductFormData = Omit<Product, 'id' | 'price' | 'stock'> & {
+    price: string | number;
+    stock: string | number;
+};
+
 const ProductFormPage: React.FC = () => {
     const { productId } = useParams<{ productId: string }>();
     const navigate = useNavigate();
@@ -10,13 +15,13 @@ const ProductFormPage: React.FC = () => {
     const isEditing = !!productId;
     const [isLoading, setIsLoading] = useState(false);
     
-    const [formData, setFormData] = useState<Omit<Product, 'id'>>({
+    const [formData, setFormData] = useState<ProductFormData>({
         name: '',
-        price: 0,
+        price: '',
         imageUrl: '',
         category: 'dama',
         description: '',
-        stock: 0,
+        stock: '',
     });
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -34,7 +39,7 @@ const ProductFormPage: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: name === 'price' || name === 'stock' ? Number(value) : value }));
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,10 +62,20 @@ const ProductFormPage: React.FC = () => {
             return;
         }
         setIsLoading(true);
+        
+        const productDataForApi: Omit<Product, 'id'> = {
+            name: formData.name,
+            description: formData.description,
+            imageUrl: formData.imageUrl,
+            category: formData.category,
+            price: Number(formData.price) || 0,
+            stock: parseInt(String(formData.stock), 10) || 0,
+        };
+
         if (isEditing) {
-            await updateProduct({ ...formData, id: productId });
+            await updateProduct({ ...productDataForApi, id: productId! });
         } else {
-            await addProduct(formData);
+            await addProduct(productDataForApi);
         }
         setIsLoading(false);
         navigate('/admin/products');
@@ -82,11 +97,11 @@ const ProductFormPage: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="price" className="block text-sm font-medium text-on-surface-secondary">Precio</label>
-                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required min="0" step="0.01" className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                            <input type="number" name="price" id="price" value={formData.price} onChange={handleChange} required min="0" step="0.01" placeholder="Ej: 49.99" className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                         </div>
                          <div>
                             <label htmlFor="stock" className="block text-sm font-medium text-on-surface-secondary">Stock</label>
-                            <input type="number" name="stock" id="stock" value={formData.stock} onChange={handleChange} required min="0" className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                            <input type="number" name="stock" id="stock" value={formData.stock} onChange={handleChange} required min="0" placeholder="Ej: 15" className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

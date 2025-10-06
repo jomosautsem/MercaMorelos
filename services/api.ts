@@ -32,7 +32,7 @@ export const api = {
         });
         return handleResponse(response);
     },
-    async register(userData: Omit<User, 'id' | 'role'>): Promise<User & { token: string }> {
+    async register(userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<User & { token: string }> {
          const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

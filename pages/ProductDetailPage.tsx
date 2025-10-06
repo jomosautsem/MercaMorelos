@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Product } from '../types';
 import { useAppContext } from '../context/AppContext';
-import { mockApi as api } from '../services/mockApi';
+import { api } from '../services/api';
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -20,7 +20,7 @@ const ProductDetailPage: React.FC = () => {
         setProduct(foundProduct);
         setLoading(false);
       } else {
-        // If not found (e.g., direct navigation), fetch from mock API
+        // If not found (e.g., direct navigation), fetch from real API
         try {
           const fetchedProduct = await api.getProduct(productId);
           if (fetchedProduct) {
