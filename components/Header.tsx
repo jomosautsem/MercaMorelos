@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { UserIcon, ShoppingCartIcon, LogoutIcon, SearchIcon, ChevronDownIcon, ArchiveBoxIcon, EnvelopeIcon } from './icons';
+import { UserIcon, ShoppingCartIcon, LogoutIcon, SearchIcon, ChevronDownIcon, ArchiveBoxIcon, EnvelopeIcon, Cog6ToothIcon } from './icons';
 
 const Header: React.FC = () => {
   const { cartCount, isAuthenticated, logout, user, setSearchQuery, unreadMessagesCount } = useAppContext();
@@ -108,10 +108,16 @@ const Header: React.FC = () => {
                   <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-surface ring-1 ring-black ring-opacity-20 focus:outline-none" role="menu" aria-orientation="vertical">
                     <div className="py-1" role="none">
                      {user?.role === 'customer' && (
-                        <Link to="/orders" onClick={() => setIsDropdownOpen(false)} className="text-on-surface-secondary flex items-center px-4 py-2 text-sm hover:bg-surface-light hover:text-on-surface" role="menuitem">
-                            <ArchiveBoxIcon className="mr-3"/>
-                            Mis Pedidos
-                        </Link>
+                        <>
+                          <Link to="/profile" onClick={() => setIsDropdownOpen(false)} className="text-on-surface-secondary flex items-center px-4 py-2 text-sm hover:bg-surface-light hover:text-on-surface" role="menuitem">
+                              <Cog6ToothIcon className="mr-3"/>
+                              Mi Perfil
+                          </Link>
+                          <Link to="/orders" onClick={() => setIsDropdownOpen(false)} className="text-on-surface-secondary flex items-center px-4 py-2 text-sm hover:bg-surface-light hover:text-on-surface" role="menuitem">
+                              <ArchiveBoxIcon className="mr-3"/>
+                              Mis Pedidos
+                          </Link>
+                        </>
                       )}
                       <button onClick={handleLogout} className="w-full text-left text-on-surface-secondary flex items-center px-4 py-2 text-sm hover:bg-surface-light hover:text-on-surface" role="menuitem">
                         <LogoutIcon className="mr-3"/>

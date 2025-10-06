@@ -370,5 +370,24 @@ export const mockApi = {
             }
         });
         return true;
+    },
+    async updateProfile(userId: string, profileData: Partial<User>): Promise<User> {
+        await delay(400);
+        const userIndex = mockUsers.findIndex(u => u.id === userId);
+        if (userIndex === -1) {
+            throw new Error("User not found");
+        }
+        mockUsers[userIndex] = { ...mockUsers[userIndex], ...profileData };
+        return { ...mockUsers[userIndex] };
+    },
+    async changePassword(userId: string, current: string, newPass: string): Promise<{ msg: string }> {
+        await delay(500);
+        const user = mockUsers.find(u => u.id === userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        // In mock, we assume current password is always correct
+        console.log(`Mock: Changed password for ${user.email}`);
+        return { msg: 'Password updated successfully' };
     }
 }

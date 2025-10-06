@@ -11,6 +11,8 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<User | null>;
   register: (userData: Omit<User, 'id' | 'role'> & { password: string }) => Promise<User | null>;
   logout: () => void;
+  updateProfile: (profileData: Partial<Omit<User, 'id' | 'role' | 'email'>>) => Promise<User | null>;
+  changePassword: (passwordData: { current: string, new: string }) => Promise<boolean>;
   cart: CartItem[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
@@ -180,6 +182,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('user');
     localStorage.removeItem('token');
   }, []);
+
+  const updateProfile = async (profileData: Partial<Omit<User, 'id' | 'role' | 'email'>>): Promise<User | null> => {
+    setError(null);
+    try {
+      const updatedUser = await api.updateProfile(profileData);
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      return updatedUser;
+    } catch(e: any) {
+      setError(e.message);
+      return null;
+    }
+  };
+    
+  const changePassword = async (passwordData: { current: string, new: string }): Promise<boolean> => {
+      setError(null);
+      try {
+          await api.changePassword(passwordData.current, passwordData.new);
+          return true;
+      } catch (e: any) {
+          setError(e.message);
+          return false;
+      }
+  };
 
   const addToCart = useCallback((product: Product) => {
     const productInStock = allProducts.find(p => p.id === product.id);
@@ -370,6 +396,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     login,
     register,
     logout,
+    updateProfile,
+    changePassword,
     cart,
     addToCart,
     removeFromCart,

@@ -23,6 +23,7 @@ import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminOrderDetailPage from './pages/admin/AdminOrderDetailPage';
 import MessagesPage from './pages/MessagesPage';
 import AdminChatPage from './pages/admin/AdminChatPage';
+import ProfilePage from './pages/ProfilePage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -69,6 +70,7 @@ const AppRoutes: React.FC = () => {
               <Route path="/orders" element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />
               <Route path="/orders/:orderId" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

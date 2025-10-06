@@ -150,6 +150,22 @@ export const api = {
         });
         return handleResponse(response);
     },
+    async updateProfile(profileData: Partial<Omit<User, 'id' | 'role' | 'email'>>): Promise<User> {
+        const response = await fetch(`${API_BASE_URL}/users/profile`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(profileData),
+        });
+        return handleResponse(response);
+    },
+    async changePassword(current: string, newPass: string): Promise<{ msg: string }> {
+        const response = await fetch(`${API_BASE_URL}/users/password`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ currentPassword: current, newPassword: newPass }),
+        });
+        return handleResponse(response);
+    },
     // MESSAGES
     async getMessages(): Promise<Message[]> {
         const response = await fetch(`${API_BASE_URL}/messages`, { headers: getAuthHeaders() });
