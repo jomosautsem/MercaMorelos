@@ -63,13 +63,17 @@ const ProductFormPage: React.FC = () => {
         }
         setIsLoading(true);
         
+        const stockValue = parseInt(String(formData.stock), 10) || 0;
+        // FIX: Added the 'isArchived' property to satisfy the 'Omit<Product, 'id'>' type.
+        // The value is determined by the stock, aligning with backend logic.
         const productDataForApi: Omit<Product, 'id'> = {
             name: formData.name,
             description: formData.description,
             imageUrl: formData.imageUrl,
             category: formData.category,
             price: Number(formData.price) || 0,
-            stock: parseInt(String(formData.stock), 10) || 0,
+            stock: stockValue,
+            isArchived: stockValue <= 0,
         };
 
         if (isEditing) {

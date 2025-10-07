@@ -12,6 +12,7 @@ const mockProducts: Product[] = [
     category: 'dama',
     description: 'Un vestido ligero y fresco, perfecto para los días soleados. Con un estampado floral vibrante y un corte favorecedor.',
     stock: 15,
+    isArchived: false,
   },
   {
     id: '2',
@@ -21,6 +22,7 @@ const mockProducts: Product[] = [
     category: 'dama',
     description: 'Blusa de seda con un tacto suave y un brillo sutil. Ideal para la oficina o una salida nocturna.',
     stock: 20,
+    isArchived: false,
   },
   {
     id: '3',
@@ -30,6 +32,7 @@ const mockProducts: Product[] = [
     category: 'dama',
     description: 'Jeans ajustados que realzan la figura. El tejido elástico proporciona comodidad durante todo el día.',
     stock: 10,
+    isArchived: false,
   },
   {
     id: '4',
@@ -39,6 +42,7 @@ const mockProducts: Product[] = [
     category: 'dama',
     description: 'Una falda midi versátil con un plisado delicado. Combínala con zapatillas o tacones para diferentes looks.',
     stock: 8,
+    isArchived: false,
   },
   // Ropa de Niño
   {
@@ -49,6 +53,7 @@ const mockProducts: Product[] = [
     category: 'nino',
     description: 'Camiseta de algodón suave con un divertido estampado de dinosaurios que brilla en la oscuridad.',
     stock: 25,
+    isArchived: false,
   },
   {
     id: '6',
@@ -58,6 +63,7 @@ const mockProducts: Product[] = [
     category: 'nino',
     description: 'Sudadera cálida y acogedora con orejitas de oso en la capucha. Perfecta para los días fríos.',
     stock: 12,
+    isArchived: false,
   },
   {
     id: '7',
@@ -67,6 +73,7 @@ const mockProducts: Product[] = [
     category: 'nino',
     description: 'Pantalones con múltiples bolsillos, ideales para las aventuras diarias de los más pequeños. Tejido duradero.',
     stock: 30,
+    isArchived: false,
   },
   {
     id: '8',
@@ -76,6 +83,7 @@ const mockProducts: Product[] = [
     category: 'nino',
     description: 'Un vestido de ensueño con una falda de tul brillante y detalles de lentejuelas. Ideal para fiestas y ocasiones especiales.',
     stock: 0,
+    isArchived: true,
   },
   {
     id: '9',
@@ -85,6 +93,7 @@ const mockProducts: Product[] = [
     category: 'nino',
     description: 'Una chaqueta vaquera clásica en tamaño infantil. Resistente y siempre a la moda.',
     stock: 18,
+    isArchived: false,
   },
   {
     id: '10',
@@ -94,6 +103,7 @@ const mockProducts: Product[] = [
     category: 'nino',
     description: 'Conjunto cómodo de sudadera y pantalón de chándal. Perfecto para jugar y estar cómodo en casa.',
     stock: 22,
+    isArchived: false,
   }
 ];
 
@@ -174,11 +184,12 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export const mockApi = {
     async getProducts(): Promise<Product[]> {
         await delay(500);
-        return [...mockProducts];
+        return [...mockProducts].filter(p => !p.isArchived);
     },
     async getProduct(id: string): Promise<Product | undefined> {
         await delay(300);
-        return mockProducts.find(p => p.id === id);
+        const product = mockProducts.find(p => p.id === id);
+        return product && !product.isArchived ? product : undefined;
     },
     async login(email: string, pass: string): Promise<{user: User, token: string} | null> {
         await delay(500);
@@ -228,6 +239,9 @@ export const mockApi = {
                 return null;
             }
             product.stock -= item.quantity;
+            if (product.stock <= 0) {
+                product.isArchived = true;
+            }
         }
         const newOrder: Order = {
             id: `order-${Date.now()}`,
@@ -249,7 +263,13 @@ export const mockApi = {
             // Restock items
             for(const item of order.items) {
                 const product = mockProducts.find(p => p.id === item.id);
-                if (product) product.stock += item.quantity;
+                if (product) {
+                    product.stock += item.quantity;
+                    // Un-archive if it was archived and now has stock
+                    if (product.stock > 0) {
+                        product.isArchived = false;
+                    }
+                }
             }
             return true;
         }
@@ -268,7 +288,8 @@ export const mockApi = {
         await delay(500);
         const newProduct: Product = {
             id: `prod-${Date.now()}`,
-            ...productData
+            ...productData,
+            isArchived: productData.stock <= 0,
         };
         mockProducts.unshift(newProduct);
         return newProduct;
@@ -277,19 +298,34 @@ export const mockApi = {
         await delay(500);
         const index = mockProducts.findIndex(p => p.id === updatedProduct.id);
         if (index > -1) {
-            mockProducts[index] = updatedProduct;
-            return updatedProduct;
+            const productToUpdate = { ...updatedProduct };
+            if (productToUpdate.stock <= 0) {
+                productToUpdate.isArchived = true;
+            } else {
+                productToUpdate.isArchived = false;
+            }
+            mockProducts[index] = productToUpdate;
+            return { ...mockProducts[index] };
         }
         return null;
     },
     async deleteProduct(productId: string): Promise<boolean> {
         await delay(500);
+        const productInOrders = mockOrders.some(order => order.items.some(item => item.id === productId));
         const index = mockProducts.findIndex(p => p.id === productId);
-        if (index > -1) {
-            mockProducts.splice(index, 1);
-            return true;
+
+        if (index === -1) {
+            return false;
         }
-        return false;
+
+        if (productInOrders) {
+            // Archive it (soft delete)
+            mockProducts[index].isArchived = true;
+        } else {
+            // Delete it permanently
+            mockProducts.splice(index, 1);
+        }
+        return true;
     },
     async getCustomers(): Promise<User[]> {
         await delay(400);
@@ -334,5 +370,24 @@ export const mockApi = {
             }
         });
         return true;
+    },
+    async updateProfile(userId: string, profileData: Partial<User>): Promise<User> {
+        await delay(400);
+        const userIndex = mockUsers.findIndex(u => u.id === userId);
+        if (userIndex === -1) {
+            throw new Error("User not found");
+        }
+        mockUsers[userIndex] = { ...mockUsers[userIndex], ...profileData };
+        return { ...mockUsers[userIndex] };
+    },
+    async changePassword(userId: string, current: string, newPass: string): Promise<{ msg: string }> {
+        await delay(500);
+        const user = mockUsers.find(u => u.id === userId);
+        if (!user) {
+            throw new Error("User not found");
+        }
+        // In mock, we assume current password is always correct
+        console.log(`Mock: Changed password for ${user.email}`);
+        return { msg: 'Password updated successfully' };
     }
 }
