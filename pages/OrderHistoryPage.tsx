@@ -21,7 +21,7 @@ const OrderHistoryPage: React.FC = () => {
             <div className="text-center py-20">
                 <h1 className="text-4xl font-bold mb-4 tracking-tight">No tienes pedidos</h1>
                 <p className="text-on-surface-secondary mb-8">Parece que todavía no has realizado ninguna compra.</p>
-                <Link to="/" className="bg-primary text-background font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
+                <Link to="/" className="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
                     Empezar a Comprar
                 </Link>
             </div>

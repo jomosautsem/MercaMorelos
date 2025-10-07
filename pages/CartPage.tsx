@@ -11,7 +11,7 @@ const CartPage: React.FC = () => {
       <div className="text-center py-20">
         <h1 className="text-4xl font-bold mb-4 tracking-tight">Tu carrito está vacío</h1>
         <p className="text-on-surface-secondary mb-8 max-w-md mx-auto">Parece que no has añadido nada a tu carrito todavía. Explora nuestras colecciones.</p>
-        <Link to="/" className="bg-primary text-background font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
+        <Link to="/" className="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
           Continuar Comprando
         </Link>
       </div>
@@ -62,7 +62,7 @@ const CartPage: React.FC = () => {
                     <span>Total</span>
                     <span>${cartTotal.toFixed(2)}</span>
                 </div>
-                <Link to="/checkout" className="w-full text-center bg-primary text-background font-bold py-3 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20 block">
+                <Link to="/checkout" className="w-full text-center bg-primary text-white font-bold py-3 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20 block">
                     Proceder al Pago
                 </Link>
             </div>

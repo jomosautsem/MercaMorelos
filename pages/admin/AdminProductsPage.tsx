@@ -17,7 +17,7 @@ const AdminProductsPage: React.FC = () => {
                 <h1 className="text-3xl font-bold tracking-tight">Gestionar Productos</h1>
                 <Link
                     to="/admin/products/new"
-                    className="bg-primary text-background font-bold py-2 px-4 rounded-lg hover:bg-primary-focus transition-colors"
+                    className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-focus transition-colors"
                 >
                     Añadir Producto
                 </Link>

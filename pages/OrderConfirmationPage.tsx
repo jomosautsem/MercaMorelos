@@ -22,7 +22,7 @@ const OrderConfirmationPage: React.FC = () => {
                 <p className="font-semibold text-on-surface mt-1">{user?.address}</p>
             </div>
             <div className="mt-10">
-                <Link to="/" className="bg-primary text-background font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
+                <Link to="/" className="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
                     Volver a la Tienda
                 </Link>
             </div>

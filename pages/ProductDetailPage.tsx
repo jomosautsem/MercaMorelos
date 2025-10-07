@@ -76,7 +76,7 @@ const ProductDetailPage: React.FC = () => {
           <button 
             onClick={() => addToCart(product)}
             disabled={isOutOfStock}
-            className="w-full sm:w-auto bg-primary text-background font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/20"
+            className="w-full sm:w-auto bg-primary text-white font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/20"
           >
             {isOutOfStock ? (product.stock === 0 ? 'Agotado' : 'Stock máximo en carrito') : 'Añadir al carrito'}
           </button>

@@ -128,7 +128,7 @@ const ProductFormPage: React.FC = () => {
                         <button type="button" onClick={() => navigate('/admin/products')} className="py-2 px-4 border border-surface rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-light hover:bg-surface">
                             Cancelar
                         </button>
-                        <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-background bg-primary hover:bg-primary-focus disabled:bg-gray-600">
+                        <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-focus disabled:bg-gray-600">
                             {isLoading ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Producto')}
                         </button>
                     </div>

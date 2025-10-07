@@ -136,7 +136,7 @@ const ProfilePage: React.FC = () => {
                         {isEditing && (
                             <div className="flex justify-end space-x-4 mt-8">
                                 <button type="button" onClick={() => setIsEditing(false)} className="py-2 px-4 border border-surface-light rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-light hover:bg-surface">Cancelar</button>
-                                <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-background bg-primary hover:bg-primary-focus disabled:opacity-50">
+                                <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-focus disabled:opacity-50">
                                     {isLoading ? 'Guardando...' : 'Guardar Cambios'}
                                 </button>
                             </div>
@@ -161,7 +161,7 @@ const ProfilePage: React.FC = () => {
                             </div>
                          </div>
                          <div className="mt-8">
-                             <button type="submit" disabled={isLoading} className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-background bg-secondary hover:bg-secondary-focus disabled:opacity-50">
+                             <button type="submit" disabled={isLoading} className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-focus disabled:opacity-50">
                                  {isLoading ? 'Actualizando...' : 'Actualizar Contraseña'}
                              </button>
                          </div>

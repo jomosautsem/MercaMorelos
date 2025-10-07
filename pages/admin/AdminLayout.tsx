@@ -4,7 +4,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 const AdminLayout: React.FC = () => {
   const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
     `flex items-center px-4 py-2.5 text-sm font-semibold rounded-md transition-colors duration-200 ${
-      isActive ? 'bg-primary text-background' : 'text-on-surface-secondary hover:bg-surface-light hover:text-on-surface'
+      isActive ? 'bg-primary text-white' : 'text-on-surface-secondary hover:bg-surface-light hover:text-on-surface'
     }`;
 
   return (

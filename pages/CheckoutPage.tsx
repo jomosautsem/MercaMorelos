@@ -119,7 +119,7 @@ const CheckoutPage: React.FC = () => {
                 </div>
             </div>
 
-            <button type="submit" className="w-full mt-8 bg-primary text-background font-bold py-4 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
+            <button type="submit" className="w-full mt-8 bg-primary text-white font-bold py-4 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
                 Pagar ${cartTotal.toFixed(2)}
             </button>
           </form>
