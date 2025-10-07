@@ -65,7 +65,7 @@ const Carousel: React.FC<CarouselProps> = ({ slides }) => {
                 <p className="text-lg md:text-xl mb-8 text-on-surface-secondary animate-fade-in-up">{slide.subtitle}</p>
                 <Link 
                   to={slide.link} 
-                  className="bg-primary text-background font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20"
+                  className="bg-primary text-white font-bold py-3 px-8 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20"
                 >
                   Ver Colección
                 </Link>

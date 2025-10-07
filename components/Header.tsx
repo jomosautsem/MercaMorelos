@@ -62,7 +62,7 @@ const Header: React.FC = () => {
                 {user?.role === 'admin' && (
                   <NavLink
                     to="/admin"
-                    className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-semibold ${isActive ? 'bg-secondary text-white' : 'text-on-surface-secondary hover:text-on-surface'}`}
+                    className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-semibold ${isActive ? 'bg-secondary text-slate-900' : 'text-on-surface-secondary hover:text-on-surface'}`}
                   >
                     Panel de Admin
                   </NavLink>
@@ -139,7 +139,7 @@ const Header: React.FC = () => {
                     <Link to="/messages" className="relative p-2 rounded-full hover:bg-surface-light text-on-surface-secondary" aria-label="Messages">
                       <EnvelopeIcon />
                       {unreadMessagesCount > 0 && (
-                          <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-secondary text-white text-xs flex items-center justify-center transform translate-x-1/4 -translate-y-1/4 font-bold">
+                          <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-secondary text-slate-900 text-xs flex items-center justify-center transform translate-x-1/4 -translate-y-1/4 font-bold">
                           {unreadMessagesCount}
                           </span>
                       )}
@@ -148,7 +148,7 @@ const Header: React.FC = () => {
                   <Link to="/cart" className="relative p-2 rounded-full hover:bg-surface-light text-on-surface-secondary" aria-label="Carrito de compras">
                     <ShoppingCartIcon />
                     {cartCount > 0 && (
-                        <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-primary text-background text-xs flex items-center justify-center transform translate-x-1/2 -translate-y-1/2 font-bold">
+                        <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-primary text-white text-xs flex items-center justify-center transform translate-x-1/2 -translate-y-1/2 font-bold">
                         {cartCount}
                         </span>
                     )}

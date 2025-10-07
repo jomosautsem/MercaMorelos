@@ -46,7 +46,7 @@ const MessagesPage: React.FC = () => {
                 <div ref={chatContainerRef} className="flex-1 p-4 overflow-y-auto space-y-4">
                      {conversation.map(msg => (
                         <div key={msg.id} className={`flex ${msg.from === 'customer' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow ${msg.from === 'customer' ? 'bg-primary text-background' : 'bg-surface-light text-on-surface'}`}>
+                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow ${msg.from === 'customer' ? 'bg-primary text-white' : 'bg-surface-light text-on-surface'}`}>
                                 <p>{msg.text}</p>
                                 <p className="text-xs opacity-75 mt-1 text-right">{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
@@ -65,7 +65,7 @@ const MessagesPage: React.FC = () => {
                             placeholder="Escribe tu respuesta..."
                             className="flex-1 px-4 py-2.5 bg-surface-light text-on-surface border border-surface-light rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                         />
-                        <button type="submit" className="py-2 px-6 border border-transparent rounded-full shadow-sm text-sm font-bold text-background bg-primary hover:bg-primary-focus">
+                        <button type="submit" className="py-2 px-6 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-focus">
                             Enviar
                         </button>
                     </form>

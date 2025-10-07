@@ -35,7 +35,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             onClick={() => addToCart(product)}
             disabled={isOutOfStock}
             aria-label={isOutOfStock ? 'Producto agotado' : 'Añadir al carrito'}
-            className="w-12 h-12 bg-primary text-background rounded-full flex items-center justify-center shadow-lg hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed hover:scale-110"
+            className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed hover:scale-110"
           >
             {isOutOfStock ? 
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
