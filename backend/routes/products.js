@@ -4,14 +4,29 @@ const getClient = require('../db').getClient;
 const { protect, admin } = require('../middleware/authMiddleware');
 
 // @route   GET /api/products
-// @desc    Fetch all active products
+// @desc    Fetch all active products and their ratings
 // @access  Public
 router.get('/', async (req, res) => {
   try {
     const pool = require('../db');
-    // Note: This now only fetches non-archived products.
-    // Assumes a column `isArchived` (BOOLEAN DEFAULT false) exists on the products table.
-    const products = await pool.query('SELECT * FROM products WHERE "isArchived" = false ORDER BY "createdAt" DESC');
+    // Join with reviews to calculate average rating and review count
+    const products = await pool.query(`
+      SELECT 
+        p.*, 
+        COALESCE(r.avg_rating, 0) as "averageRating", 
+        COALESCE(r.review_count, 0) as "reviewCount"
+      FROM products p
+      LEFT JOIN (
+        SELECT 
+          "productId", 
+          AVG(rating) as avg_rating, 
+          COUNT(id) as review_count 
+        FROM reviews 
+        GROUP BY "productId"
+      ) r ON p.id = r."productId"
+      WHERE p."isArchived" = false 
+      ORDER BY p."createdAt" DESC
+    `);
     res.json(products.rows);
   } catch (err) {
     console.error(err.message);
@@ -25,7 +40,6 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const pool = require('../db');
-        // Also check "isArchived" flag here to prevent direct navigation to archived products
         const product = await pool.query('SELECT * FROM products WHERE id = $1 AND "isArchived" = false', [req.params.id]);
         if (product.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });
@@ -45,7 +59,6 @@ router.post('/', protect, admin, async (req, res) => {
     try {
         const pool = require('../db');
         const numericStock = Number(stock) || 0;
-        // When creating a product, it is active by default, unless stock is 0.
         const isArchived = numericStock <= 0;
         const newProduct = await pool.query(
             'INSERT INTO products (name, price, "imageUrl", category, description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
@@ -66,7 +79,6 @@ router.put('/:id', protect, admin, async (req, res) => {
     try {
         const pool = require('../db');
         const numericStock = Number(stock) || 0;
-        // Archive if stock is 0 or less, un-archive otherwise.
         const isArchived = numericStock <= 0;
 
         const updatedProduct = await pool.query(
@@ -90,8 +102,6 @@ router.delete('/:id', protect, admin, async (req, res) => {
     const client = await getClient();
     try {
         await client.query('BEGIN');
-
-        // Check if the product is part of any order
         const orderItemsResult = await client.query(
             'SELECT 1 FROM order_items WHERE "productId" = $1 LIMIT 1',
             [req.params.id]
@@ -101,14 +111,13 @@ router.delete('/:id', protect, admin, async (req, res) => {
         let message;
 
         if (orderItemsResult.rows.length > 0) {
-            // Product is in an order, so archive it (soft delete)
             result = await client.query(
                 'UPDATE products SET "isArchived" = true WHERE id = $1',
                 [req.params.id]
             );
             message = 'Product archived successfully';
         } else {
-            // Product is not in any order, so delete it permanently (hard delete)
+            await client.query('DELETE FROM reviews WHERE "productId" = $1', [req.params.id]);
             result = await client.query(
                 'DELETE FROM products WHERE id = $1',
                 [req.params.id]
@@ -130,6 +139,78 @@ router.delete('/:id', protect, admin, async (req, res) => {
         res.status(500).send('Server Error');
     } finally {
         client.release();
+    }
+});
+
+// --- REVIEWS ---
+
+// @route   GET /api/products/:id/reviews
+// @desc    Get all reviews for a product
+// @access  Public
+router.get('/:id/reviews', async (req, res) => {
+    try {
+        const pool = require('../db');
+        const reviews = await pool.query(
+            `SELECT r.id, r."productId", r."userId", r.rating, r.comment, r."createdAt" as date, 
+                    u."firstName", u."paternalLastName" 
+             FROM reviews r
+             JOIN users u ON r."userId" = u.id
+             WHERE r."productId" = $1 
+             ORDER BY r."createdAt" DESC`,
+            [req.params.id]
+        );
+        
+        const formattedReviews = reviews.rows.map(r => ({
+            ...r,
+            userName: `${r.firstName} ${r.paternalLastName}`.trim()
+        }));
+
+        res.json(formattedReviews);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/products/:id/reviews
+// @desc    Create a review for a product
+// @access  Private
+router.post('/:id/reviews', protect, async (req, res) => {
+    const { rating, comment } = req.body;
+    const productId = req.params.id;
+    const userId = req.user.id;
+
+    try {
+        const pool = require('../db');
+        // 1. Verify the user has purchased and received this product
+        const purchaseResult = await pool.query(
+            `SELECT 1 FROM orders o
+             JOIN order_items oi ON o.id = oi."orderId"
+             WHERE o."userId" = $1 AND oi."productId" = $2 AND o.status = 'Entregado'
+             LIMIT 1`,
+            [userId, productId]
+        );
+
+        if (purchaseResult.rows.length === 0) {
+            return res.status(403).json({ message: 'You can only review products you have purchased and received.' });
+        }
+        
+        // 2. Insert the review (or update if it exists, due to UNIQUE constraint)
+        const newReview = await pool.query(
+            `INSERT INTO reviews ("productId", "userId", rating, comment)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT ("productId", "userId") DO UPDATE
+             SET rating = EXCLUDED.rating, comment = EXCLUDED.comment, "createdAt" = NOW()
+             RETURNING *`,
+            [productId, userId, rating, comment]
+        );
+        
+        res.status(201).json(newReview.rows[0]);
+
+    } catch (err) {
+        console.error(err.message);
+        // Check for specific DB errors if needed, e.g., foreign key violation
+        res.status(500).send('Server Error');
     }
 });
 

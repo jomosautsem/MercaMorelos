@@ -3,7 +3,6 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, CartItem, User, Order, Message, Review } from '../types';
 import { api } from '../services/api';
-import { mockApi } from '../services/mockApi';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -170,7 +169,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return newUser;
        }
        return null;
-    // FIX: The catch block was missing curly braces, causing a major syntax error.
     } catch (e: any) {
       setError(e.message);
       return null;
@@ -262,7 +260,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
-            // Refetch products to get updated stock and remove auto-archived items
             api.getProducts().then(setAllProducts);
             return true;
         }
@@ -270,7 +267,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e: any) {
         setError(e.message)
         alert(`Error al realizar el pedido: ${e.message}`);
-        // Refetch products to get latest stock info
         api.getProducts().then(setAllProducts);
         return false;
     }
@@ -293,7 +289,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
         await api.cancelOrder(orderId);
         setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
-        // Refetch products to get updated stock
         api.getProducts().then(setAllProducts);
     } catch (e: any) {
         setError(e.message);
@@ -325,8 +320,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
         const result = await api.updateProduct(updatedProduct);
         if(result){
-            // If the product is archived as a result of the update (e.g. stock becomes 0),
-            // remove it from the list. Otherwise, update it.
             if (result.isArchived) {
                 setAllProducts(prev => prev.filter(p => p.id !== result.id));
             } else {
@@ -346,8 +339,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
-      // FIX: Provide direct feedback to the user on failure. This solves the issue
-      // where the button appears to do nothing when the underlying API call fails.
       alert(`No se pudo archivar el producto: ${errorMessage}`);
     }
   }, []);
@@ -366,10 +357,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        // FIX: Pass the sender's ID (user.id) to align with the original application
-        // logic that was designed around the mock API. The real api.ts service has been
-        // updated to accept this parameter for consistency, even though the backend
-        // uses the auth token. This ensures the frontend state updates correctly.
         const newMessage = await api.sendMessage(text, toId, user.id);
         setMessages(prev => [...prev, newMessage]);
     } catch (e: any) {
@@ -396,8 +383,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getReviewsForProduct = useCallback(async (productId: string): Promise<Review[]> => {
       setError(null);
       try {
-          // Use mockApi as backend endpoint is not available yet
-          return await mockApi.getReviewsForProduct(productId);
+          return await api.getReviewsForProduct(productId);
       } catch (e: any) {
           setError(e.message);
           return [];
@@ -408,12 +394,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if(!user) return false;
       setError(null);
       try {
-          const userName = `${user.firstName} ${user.paternalLastName}`;
-          // Use mockApi as backend endpoint is not available yet
-          await mockApi.addProductReview(productId, user.id, userName, rating, comment);
+          await api.addProductReview(productId, rating, comment);
           
-          // Refetch all products to get potentially updated ratings for listing pages
-          const updatedProducts = await mockApi.getProducts(); // Using mock to get updated ratings
+          // Refetch all products to get updated ratings for product list pages
+          const updatedProducts = await api.getProducts();
           setAllProducts(updatedProducts);
           return true;
       } catch (e: any) {
