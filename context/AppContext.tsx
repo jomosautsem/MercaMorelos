@@ -1,8 +1,9 @@
 
 
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Product, CartItem, User, Order, Message } from '../types';
+import { Product, CartItem, User, Order, Message, Review } from '../types';
 import { api } from '../services/api';
+import { mockApi } from '../services/mockApi';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -40,6 +41,9 @@ interface AppContextType {
   unreadMessagesCount: number;
   loading: boolean;
   error: string | null;
+  getReviewsForProduct: (productId: string) => Promise<Review[]>;
+  addProductReview: (productId: string, rating: number, comment: string) => Promise<boolean>;
+  checkIfUserPurchasedProduct: (productId: string) => boolean;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -389,6 +393,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return messages.filter(msg => msg.toId === user.id && !msg.read).length;
   }, [messages, user]);
 
+  const getReviewsForProduct = useCallback(async (productId: string): Promise<Review[]> => {
+      setError(null);
+      try {
+          // Use mockApi as backend endpoint is not available yet
+          return await mockApi.getReviewsForProduct(productId);
+      } catch (e: any) {
+          setError(e.message);
+          return [];
+      }
+  }, []);
+
+  const addProductReview = useCallback(async (productId: string, rating: number, comment: string): Promise<boolean> => {
+      if(!user) return false;
+      setError(null);
+      try {
+          const userName = `${user.firstName} ${user.paternalLastName}`;
+          // Use mockApi as backend endpoint is not available yet
+          await mockApi.addProductReview(productId, user.id, userName, rating, comment);
+          
+          // Refetch all products to get potentially updated ratings for listing pages
+          const updatedProducts = await mockApi.getProducts(); // Using mock to get updated ratings
+          setAllProducts(updatedProducts);
+          return true;
+      } catch (e: any) {
+          setError(e.message);
+          return false;
+      }
+  }, [user]);
+  
+  const checkIfUserPurchasedProduct = useCallback((productId: string): boolean => {
+      if (!user) return false;
+      return orders.some(order => 
+          order.status === 'Entregado' && order.items.some(item => item.id === productId)
+      );
+  }, [user, orders]);
+
+
   const value = {
     isAuthenticated: !!user,
     user,
@@ -425,6 +466,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     unreadMessagesCount,
     loading,
     error,
+    getReviewsForProduct,
+    addProductReview,
+    checkIfUserPurchasedProduct,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

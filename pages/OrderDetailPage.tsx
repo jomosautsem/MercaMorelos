@@ -80,16 +80,28 @@ const OrderDetailPage: React.FC = () => {
                          <h2 className="text-2xl font-bold mb-4">Artículos del Pedido</h2>
                         <ul className="divide-y divide-surface-light">
                             {order.items.map(item => (
-                                <li key={item.id} className="flex items-center py-4">
-                                    <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-md object-cover mr-4" />
-                                    <div className="flex-grow">
-                                        <p className="font-semibold text-on-surface">{item.name}</p>
-                                        <p className="text-sm text-on-surface-secondary">Cantidad: {item.quantity}</p>
+                                <li key={item.id} className="py-4">
+                                    <div className="flex items-center">
+                                        <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-md object-cover mr-4" />
+                                        <div className="flex-grow">
+                                            <p className="font-semibold text-on-surface">{item.name}</p>
+                                            <p className="text-sm text-on-surface-secondary">Cantidad: {item.quantity}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="font-semibold text-on-surface">${(item.price * item.quantity).toFixed(2)}</p>
+                                            <p className="text-sm text-on-surface-secondary">${item.price.toFixed(2)} c/u</p>
+                                        </div>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="font-semibold text-on-surface">${(item.price * item.quantity).toFixed(2)}</p>
-                                        <p className="text-sm text-on-surface-secondary">${item.price.toFixed(2)} c/u</p>
-                                    </div>
+                                    {order.status === 'Entregado' && (
+                                        <div className="mt-3 text-right">
+                                        <Link 
+                                            to={`/product/${item.id}`}
+                                            className="text-sm font-semibold text-primary hover:text-primary-focus hover:underline"
+                                        >
+                                            Dejar una opinión
+                                        </Link>
+                                        </div>
+                                    )}
                                 </li>
                             ))}
                         </ul>

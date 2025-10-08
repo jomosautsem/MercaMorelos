@@ -110,14 +110,37 @@ router.post('/', protect, async (req, res) => {
 // @access  Private
 router.get('/myorders', protect, async (req, res) => {
     try {
-        const ordersResult = await require('../db').query(
-            `SELECT o.id, o.date, o."estimatedDeliveryDate", o.total, o.status
+        const db = require('../db');
+        const ordersResult = await db.query(
+            `SELECT o.id, o.date, o."estimatedDeliveryDate", o.total, o.status, o."shippingInfo"
              FROM orders o
              WHERE o."userId" = $1
              ORDER BY o.date DESC`,
             [req.user.id]
         );
-        res.json(ordersResult.rows);
+        
+        const orders = ordersResult.rows;
+
+        // For each order, fetch its items to provide full order data
+        for (const order of orders) {
+            const itemsResult = await db.query(
+                `SELECT 
+                    p.id, p.name, p."imageUrl", p.category, p.description, p.stock, p."isArchived",
+                    oi.price, oi.quantity
+                 FROM order_items oi
+                 JOIN products p ON p.id = oi."productId"
+                 WHERE oi."orderId" = $1`,
+                [order.id]
+            );
+            // The price from order_items is the price at the time of purchase.
+            // We map it to the 'price' field that the frontend CartItem expects.
+            order.items = itemsResult.rows.map(item => ({
+                ...item,
+                price: parseFloat(item.price),
+            }));
+        }
+
+        res.json(orders);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

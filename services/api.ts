@@ -1,4 +1,4 @@
-import { Product, User, Order, Message, CartItem } from '../types';
+import { Product, User, Order, Message, CartItem, Review } from '../types';
 
 // Use Vite's env variable, with a fallback for other environments
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:4000/api';
@@ -39,6 +39,14 @@ const normalizeOrder = (order: any): Order => {
         ...order,
         total: order.total != null ? parseFloat(order.total) : 0,
         items: Array.isArray(order.items) ? order.items.map(normalizeProduct) : [],
+    };
+};
+
+const normalizeReview = (review: any): Review => {
+    if (!review) return review;
+    return {
+        ...review,
+        rating: review.rating != null ? parseInt(String(review.rating), 10) : 0,
     };
 };
 
@@ -100,7 +108,7 @@ export const api = {
     async getMyOrders(): Promise<Order[]> {
         const response = await fetch(`${API_BASE_URL}/orders/myorders`, { headers: getAuthHeaders() });
         const orders = await handleResponse(response);
-        return orders.map((o: any) => ({ ...o, total: parseFloat(o.total) }));
+        return orders.map(normalizeOrder);
     },
     async getAllOrders(): Promise<Order[]> {
         const response = await fetch(`${API_BASE_URL}/orders`, { headers: getAuthHeaders() });
@@ -188,5 +196,20 @@ export const api = {
             body: JSON.stringify({ fromId }),
         });
         return handleResponse(response);
+    },
+    // REVIEWS
+    async getReviewsForProduct(productId: string): Promise<Review[]> {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}/reviews`);
+        const reviews = await handleResponse(response);
+        return reviews.map(normalizeReview);
+    },
+    async addProductReview(productId: string, rating: number, comment: string): Promise<Review> {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}/reviews`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ rating, comment }),
+        });
+        const newReview = await handleResponse(response);
+        return normalizeReview(newReview);
     },
 };

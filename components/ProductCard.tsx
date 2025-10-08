@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../types';
 import { useAppContext } from '../context/AppContext';
+import StarRating from './StarRating';
 
 interface ProductCardProps {
   product: Product;
@@ -29,6 +30,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
       <div className="p-5 relative">
         <h3 className="text-lg font-bold text-on-surface truncate group-hover:text-primary transition-colors">{product.name}</h3>
+        
+        {product.reviewCount !== undefined && product.reviewCount > 0 ? (
+          <div className="flex items-center mt-2">
+            <StarRating rating={product.averageRating || 0} size="sm" />
+            <span className="text-xs text-on-surface-secondary ml-2">({product.reviewCount})</span>
+          </div>
+        ) : (
+            <div className="h-4 mt-2"></div>
+        )}
+
         <p className="text-2xl font-extrabold text-primary mt-2">${product.price.toFixed(2)}</p>
         <div className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button 

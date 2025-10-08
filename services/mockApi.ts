@@ -1,4 +1,4 @@
-import { Product, User, Order, Message, CartItem } from '../types';
+import { Product, User, Order, Message, CartItem, Review } from '../types';
 
 // Let's create some mock data.
 
@@ -153,6 +153,17 @@ let mockOrders: Order[] = [
             { ...mockProducts[2], quantity: 1 }
         ],
         shippingInfo: mockCustomer,
+    },
+     {
+        id: 'order-3',
+        date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+        estimatedDeliveryDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        total: 49.99,
+        status: 'Entregado',
+        items: [
+            { ...mockProducts[0], quantity: 1 }
+        ],
+        shippingInfo: mockCustomer,
     }
 ];
 
@@ -177,6 +188,47 @@ let mockMessages: Message[] = [
     }
 ];
 
+let mockReviews: Review[] = [
+    {
+        id: 'review-1',
+        productId: '1',
+        userId: 'customer-1',
+        userName: 'Juan Perez',
+        rating: 5,
+        comment: '¡Me encantó el vestido! La tela es muy fresca y el estampado es precioso. Me queda perfecto.',
+        date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+        id: 'review-2',
+        productId: '1',
+        userId: 'admin-user', // Just for example, can be any user id
+        userName: 'Ana Lopez',
+        rating: 4,
+        comment: 'Es un vestido muy bonito, aunque un poco más largo de lo que esperaba. Aún así, lo recomiendo.',
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+        id: 'review-3',
+        productId: '3',
+        userId: 'customer-1',
+        userName: 'Juan Perez',
+        rating: 5,
+        comment: 'Estos jeans son increíblemente cómodos y se ajustan muy bien al cuerpo. ¡Los mejores que he tenido!',
+        date: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+];
+
+const getProductRatings = (productId: string) => {
+    const reviewsForProduct = mockReviews.filter(r => r.productId === productId);
+    const reviewCount = reviewsForProduct.length;
+    if (reviewCount === 0) {
+        return { averageRating: 0, reviewCount: 0 };
+    }
+    const totalRating = reviewsForProduct.reduce((acc, review) => acc + review.rating, 0);
+    const averageRating = totalRating / reviewCount;
+    return { averageRating, reviewCount };
+};
+
 // Helper to simulate API delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -184,12 +236,23 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export const mockApi = {
     async getProducts(): Promise<Product[]> {
         await delay(500);
-        return [...mockProducts].filter(p => !p.isArchived);
+        return [...mockProducts]
+            .filter(p => !p.isArchived)
+            .map(p => ({
+                ...p,
+                ...getProductRatings(p.id)
+            }));
     },
     async getProduct(id: string): Promise<Product | undefined> {
         await delay(300);
         const product = mockProducts.find(p => p.id === id);
-        return product && !product.isArchived ? product : undefined;
+        if (product && !product.isArchived) {
+             return {
+                ...product,
+                ...getProductRatings(id)
+            };
+        }
+        return undefined;
     },
     async login(email: string, pass: string): Promise<{user: User, token: string} | null> {
         await delay(500);
@@ -389,5 +452,23 @@ export const mockApi = {
         // In mock, we assume current password is always correct
         console.log(`Mock: Changed password for ${user.email}`);
         return { msg: 'Password updated successfully' };
-    }
+    },
+    async getReviewsForProduct(productId: string): Promise<Review[]> {
+        await delay(300);
+        return mockReviews.filter(r => r.productId === productId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    },
+    async addProductReview(productId: string, userId: string, userName: string, rating: number, comment: string): Promise<Review> {
+        await delay(500);
+        const newReview: Review = {
+            id: `review-${Date.now()}`,
+            productId,
+            userId,
+            userName,
+            rating,
+            comment,
+            date: new Date().toISOString(),
+        };
+        mockReviews.unshift(newReview);
+        return newReview;
+    },
 }
