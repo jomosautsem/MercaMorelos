@@ -20,13 +20,13 @@ const ReviewForm: React.FC<{ productId: string, onSubmit: () => void }> = ({ pro
         }
         setError('');
         setIsLoading(true);
-        const success = await addProductReview(productId, rating, comment);
-        if (success) {
+        const result = await addProductReview(productId, rating, comment);
+        if (result.success) {
             setRating(0);
             setComment('');
             onSubmit();
         } else {
-            setError('Hubo un error al enviar tu opinión. Inténtalo de nuevo.');
+            setError(result.message || 'Hubo un error al enviar tu opinión. Inténtalo de nuevo.');
         }
         setIsLoading(false);
     };

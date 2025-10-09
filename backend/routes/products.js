@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
     res.json(products.rows);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 
@@ -47,7 +47,7 @@ router.get('/:id', async (req, res) => {
         res.json(product.rows[0]);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
@@ -67,7 +67,7 @@ router.post('/', protect, admin, async (req, res) => {
         res.status(201).json(newProduct.rows[0]);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
@@ -91,7 +91,7 @@ router.put('/:id', protect, admin, async (req, res) => {
         res.json(updatedProduct.rows[0]);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
@@ -136,7 +136,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
     } catch (err) {
         await client.query('ROLLBACK');
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error' });
     } finally {
         client.release();
     }
@@ -168,7 +168,7 @@ router.get('/:id/reviews', async (req, res) => {
         res.json(formattedReviews);
     } catch (err) {
         console.error(err.message);
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
@@ -209,8 +209,7 @@ router.post('/:id/reviews', protect, async (req, res) => {
 
     } catch (err) {
         console.error(err.message);
-        // Check for specific DB errors if needed, e.g., foreign key violation
-        res.status(500).send('Server Error');
+        res.status(500).json({ message: err.message || 'Server Error' });
     }
 });
 

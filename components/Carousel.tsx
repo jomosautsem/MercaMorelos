@@ -15,7 +15,6 @@ interface CarouselProps {
 
 const Carousel: React.FC<CarouselProps> = ({ slides }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  // FIX: In a browser environment, `setTimeout` returns a `number`, not a `NodeJS.Timeout` object.
   const timeoutRef = useRef<number | null>(null);
 
   const resetTimeout = () => {
@@ -42,7 +41,7 @@ const Carousel: React.FC<CarouselProps> = ({ slides }) => {
 
   useEffect(() => {
     resetTimeout();
-    timeoutRef.current = setTimeout(goToNext, 5000);
+    timeoutRef.current = window.setTimeout(goToNext, 5000);
 
     return () => {
       resetTimeout();

@@ -15,12 +15,27 @@ const getAuthHeaders = () => {
 };
 
 const handleResponse = async (response: Response) => {
-    const resJson = await response.json();
+    // The body can only be consumed once, so we read it as text first.
+    const text = await response.text();
+
     if (!response.ok) {
-        throw new Error(resJson.message || 'Something went wrong');
+        // If the response is not OK, it's an error.
+        // We try to parse the text as JSON to get a structured error message.
+        // If parsing fails, we throw the raw text as the error.
+        try {
+            const json = JSON.parse(text);
+            throw new Error(json.message || text);
+        } catch (e) {
+            throw new Error(text || `Request failed with status ${response.status}`);
+        }
     }
-    return resJson;
+
+    // If the response is OK, parse the text as JSON.
+    // This also handles successful but empty responses (e.g., 204 No Content),
+    // which will result in an empty object.
+    return text ? JSON.parse(text) : {};
 };
+
 
 // --- Data Normalization Helpers ---
 

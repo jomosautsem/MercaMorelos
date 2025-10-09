@@ -41,7 +41,7 @@ interface AppContextType {
   loading: boolean;
   error: string | null;
   getReviewsForProduct: (productId: string) => Promise<Review[]>;
-  addProductReview: (productId: string, rating: number, comment: string) => Promise<boolean>;
+  addProductReview: (productId: string, rating: number, comment: string) => Promise<{ success: boolean; message?: string }>;
   checkIfUserPurchasedProduct: (productId: string) => boolean;
 }
 
@@ -390,20 +390,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
   }, []);
 
-  const addProductReview = useCallback(async (productId: string, rating: number, comment: string): Promise<boolean> => {
-      if(!user) return false;
-      setError(null);
-      try {
-          await api.addProductReview(productId, rating, comment);
-          
-          // Refetch all products to get updated ratings for product list pages
-          const updatedProducts = await api.getProducts();
-          setAllProducts(updatedProducts);
-          return true;
-      } catch (e: any) {
-          setError(e.message);
-          return false;
-      }
+  const addProductReview = useCallback(async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
+    if (!user) {
+        return { success: false, message: 'Debes iniciar sesión para dejar una opinión.' };
+    }
+    setError(null);
+    try {
+        await api.addProductReview(productId, rating, comment);
+        
+        // Refetch all products to get updated ratings for product list pages
+        const updatedProducts = await api.getProducts();
+        setAllProducts(updatedProducts);
+        return { success: true };
+    } catch (e: any) {
+        const message = e.message || 'Ocurrió un error desconocido.';
+        setError(message);
+        return { success: false, message };
+    }
   }, [user]);
   
   const checkIfUserPurchasedProduct = useCallback((productId: string): boolean => {

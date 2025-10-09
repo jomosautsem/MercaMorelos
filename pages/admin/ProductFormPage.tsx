@@ -22,6 +22,7 @@ const ProductFormPage: React.FC = () => {
         category: 'dama',
         description: '',
         stock: '',
+        isArchived: false,
     });
     const [imagePreview, setImagePreview] = useState<string | null>(null);
 
@@ -64,8 +65,6 @@ const ProductFormPage: React.FC = () => {
         setIsLoading(true);
         
         const stockValue = parseInt(String(formData.stock), 10) || 0;
-        // FIX: Added the 'isArchived' property to satisfy the 'Omit<Product, 'id'>' type.
-        // The value is determined by the stock, aligning with backend logic.
         const productDataForApi: Omit<Product, 'id'> = {
             name: formData.name,
             description: formData.description,
