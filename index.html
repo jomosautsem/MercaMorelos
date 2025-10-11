@@ -6,11 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MercaMorelos</title>
     
-    <!-- PWA Manifest and Theme -->
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#F97316"/>
-    <link rel="apple-touch-icon" href="/icon-192.png">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -48,9 +43,9 @@
     "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
     "react-router-dom": "https://aistudiocdn.com/react-router-dom@^7.9.3",
-    "dexie": "https://unpkg.com/dexie@3/dist/dexie.mjs",
     "vite": "https://aistudiocdn.com/vite@^7.1.9",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.4",
+    "dexie": "https://aistudiocdn.com/dexie@^4.2.1"
   }
 }
 </script>
@@ -58,14 +53,5 @@
   <body class="bg-background text-on-surface font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => console.log('Service Worker registered successfully:', registration.scope))
-                    .catch(error => console.log('Service Worker registration failed:', error));
-            });
-        }
-    </script>
   </body>
 </html>

@@ -80,7 +80,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const products = await api.getProducts();
         setAllProducts(products);
       } catch (e: any) {
-        setError(e.message);
+        // If API fails (e.g., backend not running), fall back to mock data
+        console.warn(
+            "--- MODO DE DATOS SIMULADOS ---\n" +
+            "No se pudo conectar a la API del backend. Esto es común durante el desarrollo si el servidor backend no está en ejecución.\n" +
+            "Usando datos simulados de 'services/mockApi.ts' como alternativa.\n" +
+            "Para conectarse al backend real, asegúrese de que se esté ejecutando en http://localhost:4000.\n" +
+            "Error original:", e
+        );
+        try {
+            const { mockApi } = await import('../services/mockApi');
+            const mockProducts = await mockApi.getProducts();
+            setAllProducts(mockProducts);
+        } catch (mockError: any) {
+            console.error("Crítico: Fallo al cargar los productos simulados como alternativa:", mockError);
+            setError(`Error al cargar productos: ${mockError.message}`);
+        }
       } finally {
         setLoading(false);
       }

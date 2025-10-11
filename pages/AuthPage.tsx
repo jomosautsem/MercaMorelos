@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { db } from '../services/db';
 
 const FormField: React.FC<{
     name: string;
@@ -66,38 +65,6 @@ const AuthPage: React.FC = () => {
         return;
       }
       
-      // OFFLINE REGISTRATION LOGIC
-      if (!navigator.onLine) {
-          try {
-              console.log('Offline: Storing registration locally.');
-              await db.pendingRegistrations.add({
-                  firstName: formData.firstName,
-                  paternalLastName: formData.paternalLastName,
-                  maternalLastName: formData.maternalLastName,
-                  email: formData.email,
-                  address: formData.address,
-                  password: formData.password,
-              });
-
-              if ('serviceWorker' in navigator && 'SyncManager' in window) {
-                  const sw = await navigator.serviceWorker.ready;
-                  // FIX: Cast `sw` to `any` to address the TypeScript error "Property 'sync' does not exist on type 'ServiceWorkerRegistration'".
-                  // The `sync` property is part of the Background Sync API and may not be included in default TS lib definitions.
-                  await (sw as any).sync.register('sync-new-registrations');
-              }
-              
-              setInfoMessage('Estás sin conexión. Tu registro se ha guardado y se completará cuando vuelvas a tener internet.');
-              setFormData(initialFormData);
-              
-          } catch (err) {
-              console.error("Failed to save registration for sync:", err);
-              setError('No se pudo guardar el registro para procesarlo más tarde.');
-          } finally {
-              setIsLoading(false);
-          }
-          return;
-      }
-
       // ONLINE REGISTRATION LOGIC
       const newUser = await register({
         firstName: formData.firstName,
