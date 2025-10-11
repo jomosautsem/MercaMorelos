@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
+import { db } from '../services/db';
 
 const FormField: React.FC<{
     name: string;
@@ -24,14 +25,7 @@ const FormField: React.FC<{
     </div>
 );
 
-const AuthPage: React.FC = () => {
-  const [isRegistering, setIsRegistering] = useState(false);
-  const { login, register } = useAppContext();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const [formData, setFormData] = useState({
+const initialFormData = {
     firstName: '',
     paternalLastName: '',
     maternalLastName: '',
@@ -39,18 +33,30 @@ const AuthPage: React.FC = () => {
     address: '',
     password: '',
     confirmPassword: '',
-  });
+};
+
+const AuthPage: React.FC = () => {
+  const [isRegistering, setIsRegistering] = useState(false);
+  const { login, register } = useAppContext();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const [error, setError] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError('');
+    setInfoMessage('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setInfoMessage('');
     setIsLoading(true);
 
     if (isRegistering) {
@@ -59,6 +65,40 @@ const AuthPage: React.FC = () => {
         setIsLoading(false);
         return;
       }
+      
+      // OFFLINE REGISTRATION LOGIC
+      if (!navigator.onLine) {
+          try {
+              console.log('Offline: Storing registration locally.');
+              await db.pendingRegistrations.add({
+                  firstName: formData.firstName,
+                  paternalLastName: formData.paternalLastName,
+                  maternalLastName: formData.maternalLastName,
+                  email: formData.email,
+                  address: formData.address,
+                  password: formData.password,
+              });
+
+              if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                  const sw = await navigator.serviceWorker.ready;
+                  // FIX: Cast `sw` to `any` to address the TypeScript error "Property 'sync' does not exist on type 'ServiceWorkerRegistration'".
+                  // The `sync` property is part of the Background Sync API and may not be included in default TS lib definitions.
+                  await (sw as any).sync.register('sync-new-registrations');
+              }
+              
+              setInfoMessage('Estás sin conexión. Tu registro se ha guardado y se completará cuando vuelvas a tener internet.');
+              setFormData(initialFormData);
+              
+          } catch (err) {
+              console.error("Failed to save registration for sync:", err);
+              setError('No se pudo guardar el registro para procesarlo más tarde.');
+          } finally {
+              setIsLoading(false);
+          }
+          return;
+      }
+
+      // ONLINE REGISTRATION LOGIC
       const newUser = await register({
         firstName: formData.firstName,
         paternalLastName: formData.paternalLastName,
@@ -73,7 +113,7 @@ const AuthPage: React.FC = () => {
       } else {
         setError('El correo electrónico ya está en uso o hubo un error.');
       }
-    } else {
+    } else { // Login logic
       const loggedInUser = await login(formData.email, formData.password);
       if (loggedInUser) {
         if (loggedInUser.role === 'admin') {
@@ -94,6 +134,7 @@ const AuthPage: React.FC = () => {
       <div className="max-w-md w-full bg-surface p-8 rounded-lg shadow-2xl">
         <h2 className="text-3xl font-bold text-center mb-6 tracking-tight">{isRegistering ? 'Crear una Cuenta' : 'Iniciar Sesión'}</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
+            {infoMessage && <p className="text-blue-400 text-sm text-center bg-blue-500/10 p-3 rounded-md">{infoMessage}</p>}
             {error && <p className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded-md">{error}</p>}
             {isRegistering && (
                 <>
@@ -121,7 +162,7 @@ const AuthPage: React.FC = () => {
         </form>
         <p className="mt-6 text-center text-sm text-on-surface-secondary">
           {isRegistering ? '¿Ya tienes una cuenta?' : '¿No tienes una cuenta?'}
-          <button onClick={() => { setIsRegistering(!isRegistering); setError('')}} className="font-medium text-primary hover:text-primary-focus ml-1">
+          <button onClick={() => { setIsRegistering(!isRegistering); setError(''); setInfoMessage(''); }} className="font-medium text-primary hover:text-primary-focus ml-1">
             {isRegistering ? 'Inicia Sesión' : 'Regístrate'}
           </button>
         </p>
