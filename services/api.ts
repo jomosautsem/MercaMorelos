@@ -1,7 +1,8 @@
 import { Product, User, Order, Message, CartItem, Review } from '../types';
 
-// Use Vite's env variable, with a fallback for other environments
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:4000/api';
+// Use a relative path for the API endpoint.
+// This relies on the dev server (e.g., Vite) proxying requests from /api to the backend.
+const API_BASE_URL = '/api';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');

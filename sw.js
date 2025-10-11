@@ -3,7 +3,7 @@ importScripts('https://unpkg.com/dexie@3/dist/dexie.js');
 
 const STATIC_CACHE = 'mercamorelos-static-v1';
 const DYNAMIC_CACHE = 'mercamorelos-dynamic-v1';
-const API_BASE_URL = 'http://localhost:4000/api'; // Must be hardcoded for SW scope
+const API_BASE_URL = '/api'; // Use a relative path to support proxying
 
 // Assets that form the "app shell" and are cached on install
 const APP_SHELL = [
