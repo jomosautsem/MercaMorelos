@@ -57,8 +57,19 @@ router.post('/', protect, async (req, res) => {
 // @desc    Mark messages as read
 // @access  Private
 router.put('/read', protect, async (req, res) => {
-    const { fromId } = req.body; // The other person in the chat
+    let { fromId } = req.body; // The other person in the chat
     try {
+        // FIX: Resolve the actual admin ID if the generic 'admin-user' is passed.
+        // This ensures messages from the admin can be correctly marked as read by customers.
+        if (fromId === 'admin-user') {
+            const adminResult = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+            if (adminResult.rows.length > 0) {
+                fromId = adminResult.rows[0].id;
+            } else {
+                 return res.status(500).json({ message: 'No admin user found to mark messages from.' });
+            }
+        }
+
         await pool.query(
             'UPDATE messages SET read = true WHERE "toId" = $1 AND "fromId" = $2',
             [req.user.id, fromId]
