@@ -11,6 +11,8 @@ const CheckoutPage: React.FC = () => {
     expiry: '',
     cvc: '',
   });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState('');
 
   const handleCardChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCardDetails({ ...cardDetails, [e.target.name]: e.target.value });
@@ -18,6 +20,16 @@ const CheckoutPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Clear previous error
+
+    if (paymentMethod === 'debit') {
+      if (!cardDetails.number.trim() || !cardDetails.expiry.trim() || !cardDetails.cvc.trim()) {
+        setError('Por favor, complete todos los campos de la tarjeta.');
+        return;
+      }
+    }
+
+    setIsProcessing(true);
     // In a real app, payment processing would happen here.
     
     // placeOrder now returns a boolean indicating success, await its result
@@ -25,9 +37,10 @@ const CheckoutPage: React.FC = () => {
     
     if (orderPlacedSuccessfully) {
         navigate('/confirmation');
+    } else {
+        // The error toast is shown from the context
+        setIsProcessing(false);
     }
-    // If not successful, an alert is shown from within placeOrder
-    // and the user remains on the page to adjust their cart.
   };
 
   if (cart.length === 0) {
@@ -61,6 +74,7 @@ const CheckoutPage: React.FC = () => {
 
             <div className="bg-surface p-6 rounded-lg shadow-md border border-border-color">
                 <h2 className="text-2xl font-bold mb-4">Método de Pago</h2>
+                {error && <p className="text-red-600 text-sm text-center bg-red-100 p-3 rounded-md mb-4">{error}</p>}
                 <div className="space-y-4">
                     <div onClick={() => setPaymentMethod('debit')} className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'debit' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border-color hover:border-primary/50'}`}>
                         <label className="flex items-center">
@@ -78,6 +92,7 @@ const CheckoutPage: React.FC = () => {
                                     value={cardDetails.number}
                                     onChange={handleCardChange}
                                     placeholder="**** **** **** ****"
+                                    required={paymentMethod === 'debit'}
                                     className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
@@ -89,6 +104,7 @@ const CheckoutPage: React.FC = () => {
                                         value={cardDetails.expiry}
                                         onChange={handleCardChange}
                                         placeholder="MM/YY"
+                                        required={paymentMethod === 'debit'}
                                         className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
                                 </div>
                                 <div className="col-span-2">
@@ -99,6 +115,7 @@ const CheckoutPage: React.FC = () => {
                                         value={cardDetails.cvc}
                                         onChange={handleCardChange}
                                         placeholder="123"
+                                        required={paymentMethod === 'debit'}
                                         className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
                                 </div>
                             </div>
@@ -119,8 +136,8 @@ const CheckoutPage: React.FC = () => {
                 </div>
             </div>
 
-            <button type="submit" className="w-full mt-8 bg-primary text-slate-900 font-bold py-4 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40">
-                Pagar ${cartTotal.toFixed(2)}
+            <button type="submit" disabled={isProcessing} className="w-full mt-8 bg-primary text-slate-900 font-bold py-4 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100">
+                {isProcessing ? 'Procesando...' : `Pagar $${cartTotal.toFixed(2)}`}
             </button>
           </form>
         </div>

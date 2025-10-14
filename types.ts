@@ -26,7 +26,7 @@ export interface CartItem extends Product {
 }
 
 export interface User {
-  id: string;
+  id:string;
   firstName: string;
   paternalLastName: string;
   maternalLastName: string;
@@ -53,4 +53,10 @@ export interface Message {
   text: string;
   timestamp: string;
   read: boolean;
+}
+
+export interface ToastMessage {
+  id: number;
+  message: string;
+  type: 'success' | 'error' | 'info';
 }

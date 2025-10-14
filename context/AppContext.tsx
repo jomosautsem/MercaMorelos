@@ -1,7 +1,7 @@
 
 
-import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Product, CartItem, User, Order, Message, Review } from '../types';
+import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Product, CartItem, User, Order, Message, Review, ToastMessage } from '../types';
 import { api } from '../services/api';
 
 interface AppContextType {
@@ -45,6 +45,9 @@ interface AppContextType {
   getReviewsForProduct: (productId: string) => Promise<Review[]>;
   addProductReview: (productId: string, rating: number, comment: string) => Promise<{ success: boolean; message?: string }>;
   checkIfUserPurchasedProduct: (productId: string) => boolean;
+  toasts: ToastMessage[];
+  showToast: (message: string, type?: ToastMessage['type']) => void;
+  removeToast: (id: number) => void;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -59,8 +62,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [customers, setCustomers] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const toastIdRef = useRef(0);
+
+  const removeToast = (id: number) => {
+    setToasts(currentToasts => currentToasts.filter(toast => toast.id !== id));
+  };
+
+  const showToast = useCallback((message: string, type: ToastMessage['type'] = 'info') => {
+    const id = toastIdRef.current++;
+    setToasts(currentToasts => [...currentToasts, { id, message, type }]);
+    setTimeout(() => {
+        removeToast(id);
+    }, 5000); // Auto-dismiss after 5 seconds
+  }, []);
 
   // Initial load
   useEffect(() => {
@@ -86,12 +103,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
          console.error("Fallo al cargar los datos iniciales desde la API:", message);
          setError(`Error al cargar productos: ${message}`);
+         showToast(`Error al cargar productos: ${message}`, 'error');
       } finally {
         setLoading(false);
       }
     };
     init();
-  }, []);
+  }, [showToast]);
 
   // Fetch data when user logs in
   useEffect(() => {
@@ -226,26 +244,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addToCart = useCallback((product: Product) => {
     const productInStock = allProducts.find(p => p.id === product.id);
     if (!productInStock || productInStock.stock <= 0) {
-      alert('Este producto está agotado.');
+      showToast('Este producto está agotado.', 'error');
       return;
     }
     setCart(prevCart => {
       const existingItem = prevCart.find(item => item.id === product.id);
       const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
       if (productInStock.stock <= currentQuantityInCart) {
-        alert('No hay suficiente stock para agregar más de este artículo.');
+        showToast('No hay suficiente stock para agregar más de este artículo.', 'error');
         return prevCart;
       }
+      showToast(`${product.name} añadido al carrito`, 'success');
       if (existingItem) {
         return prevCart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
       return [...prevCart, { ...product, quantity: 1 }];
     });
-  }, [allProducts]);
+  }, [allProducts, showToast]);
 
   const removeFromCart = useCallback((productId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
-  }, []);
+    setCart(prevCart => {
+      const itemToRemove = prevCart.find(item => item.id === productId);
+      if (itemToRemove) {
+        showToast(`${itemToRemove.name} eliminado del carrito`, 'info');
+      }
+      return prevCart.filter(item => item.id !== productId);
+    });
+  }, [showToast]);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
@@ -254,12 +279,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     const productInStock = allProducts.find(p => p.id === productId);
     if (productInStock && quantity > productInStock.stock) {
-      alert(`Solo quedan ${productInStock.stock} artículos en stock.`);
+      showToast(`Solo quedan ${productInStock.stock} artículos en stock.`, 'error');
       setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity: productInStock.stock } : item));
     } else {
       setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity } : item));
     }
-  }, [removeFromCart, allProducts]);
+  }, [removeFromCart, allProducts, showToast]);
 
   const clearCart = useCallback(() => setCart([]), []);
 
@@ -296,7 +321,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
     } catch (e: any) {
         setError(e.message)
-        alert(`Error al realizar el pedido: ${e.message}`);
+        showToast(`Error al realizar el pedido: ${e.message}`, 'error');
         await refetchProducts();
         return false;
     }
@@ -363,9 +388,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
-      alert(`No se pudo archivar el producto: ${errorMessage}`);
+      showToast(`No se pudo archivar el producto: ${errorMessage}`, 'error');
     }
-  }, [refetchProducts]);
+  }, [refetchProducts, showToast]);
   
   const deleteProductPermanently = useCallback(async (productId: string) => {
     setError(null);
@@ -375,9 +400,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
-      alert(`Error al eliminar el producto: ${errorMessage}`);
+      showToast(`Error al eliminar el producto: ${errorMessage}`, 'error');
     }
-  }, [refetchProducts]);
+  }, [refetchProducts, showToast]);
   
   const deleteCustomer = async (customerId: string) => {
     setError(null);
@@ -491,6 +516,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getReviewsForProduct,
     addProductReview,
     checkIfUserPurchasedProduct,
+    toasts,
+    showToast,
+    removeToast,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -37,11 +37,53 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return user?.role === 'admin' ? <>{children}</> : <Navigate to="/" replace />;
 }
 
+const ToastIcon: React.FC<{ type: 'success' | 'error' | 'info' }> = ({ type }) => {
+    switch (type) {
+        case 'success':
+            return (
+                <div className="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path></svg>
+                </div>
+            );
+        case 'error':
+            return (
+                <div className="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-red-500 bg-red-100 rounded-lg">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                </div>
+            );
+        default:
+            return (
+                <div className="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-blue-500 bg-blue-100 rounded-lg">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd"></path></svg>
+                </div>
+            );
+    }
+}
+
+const ToastContainer: React.FC = () => {
+    const { toasts, removeToast } = useAppContext();
+
+    return (
+        <div className="fixed top-24 right-4 z-50 space-y-3 w-full max-w-xs">
+            {toasts.map(toast => (
+                <div key={toast.id} className="w-full max-w-xs p-4 text-on-surface-secondary bg-surface rounded-lg shadow-lg flex items-center space-x-3" role="alert" style={{ animation: 'fade-in-down 0.5s' }}>
+                    <ToastIcon type={toast.type} />
+                    <div className="text-sm font-normal flex-1">{toast.message}</div>
+                    <button type="button" className="-mx-1.5 -my-1.5 bg-surface text-on-surface-secondary hover:text-on-surface rounded-lg p-1.5 hover:bg-surface-light inline-flex h-8 w-8" aria-label="Close" onClick={() => removeToast(toast.id)}>
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                    </button>
+                </div>
+            ))}
+        </div>
+    );
+};
+
 const AppRoutes: React.FC = () => {
     const { user } = useAppContext();
     return (
         <div className="flex flex-col min-h-screen">
           <Header />
+          <ToastContainer />
           <main className="flex-grow">
             <Routes>
               {/* Admin Routes */}
