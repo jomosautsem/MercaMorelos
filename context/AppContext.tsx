@@ -213,17 +213,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return null;
     }
   };
+  
+  const clearCart = useCallback(() => setCart([]), []);
 
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
+    clearCart(); // Clear the cart on logout
     setOrders([]);
     setMessages([]);
     setCustomers([]);
     setArchivedProducts([]);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-  }, []);
+  }, [clearCart]);
 
   const updateProfile = async (profileData: Partial<Omit<User, 'id' | 'role' | 'email'>>): Promise<User | null> => {
     if (!user) return null;
@@ -298,7 +301,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [removeFromCart, allProducts, showToast]);
 
-  const clearCart = useCallback(() => setCart([]), []);
 
   const cartCount = useMemo(() => cart.reduce((count, item) => count + item.quantity, 0), [cart]);
   const cartTotal = useMemo(() => cart.reduce((total, item) => total + item.price * item.quantity, 0), [cart]);
