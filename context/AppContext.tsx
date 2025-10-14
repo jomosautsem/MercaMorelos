@@ -66,6 +66,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const toastIdRef = useRef(0);
+  const cartRef = useRef(cart);
+
+  useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
 
   const removeToast = (id: number) => {
     setToasts(currentToasts => currentToasts.filter(toast => toast.id !== id));
@@ -247,15 +252,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('Este producto está agotado.', 'error');
       return;
     }
+
+    const existingItem = cartRef.current.find(item => item.id === product.id);
+    const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
+
+    if (productInStock.stock <= currentQuantityInCart) {
+      showToast('No hay suficiente stock para agregar más de este artículo.', 'error');
+      return;
+    }
+    
+    showToast(`${product.name} añadido al carrito`, 'success');
     setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
-      const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
-      if (productInStock.stock <= currentQuantityInCart) {
-        showToast('No hay suficiente stock para agregar más de este artículo.', 'error');
-        return prevCart;
-      }
-      showToast(`${product.name} añadido al carrito`, 'success');
-      if (existingItem) {
+      const existingItemInPrev = prevCart.find(item => item.id === product.id);
+      if (existingItemInPrev) {
         return prevCart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
       return [...prevCart, { ...product, quantity: 1 }];
@@ -263,13 +272,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [allProducts, showToast]);
 
   const removeFromCart = useCallback((productId: string) => {
-    setCart(prevCart => {
-      const itemToRemove = prevCart.find(item => item.id === productId);
-      if (itemToRemove) {
-        showToast(`${itemToRemove.name} eliminado del carrito`, 'info');
-      }
-      return prevCart.filter(item => item.id !== productId);
-    });
+    const itemToRemove = cartRef.current.find(item => item.id === productId);
+    if (itemToRemove) {
+      showToast(`${itemToRemove.name} eliminado del carrito`, 'info');
+    }
+    setCart(prevCart => prevCart.filter(item => item.id !== productId));
   }, [showToast]);
 
   const updateQuantity = useCallback((productId: string, quantity: number) => {
