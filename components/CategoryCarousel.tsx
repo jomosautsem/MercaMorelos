@@ -20,11 +20,11 @@ const CategoryCarousel: React.FC = () => {
             <Link
               key={index}
               to={category.link}
-              className="flex-shrink-0 flex flex-col items-center justify-center w-24 h-24 bg-surface-light rounded-lg group hover:bg-primary/20 transition-all duration-300 transform hover:-translate-y-1 border border-transparent hover:border-primary/30 shadow-lg"
+              className="flex-shrink-0 flex flex-col items-center justify-center w-48 h-48 bg-surface-light rounded-lg group hover:bg-primary/20 transition-all duration-300 transform hover:-translate-y-1 border border-transparent hover:border-primary/30 shadow-lg"
               aria-label={`Ver categoría ${category.name}`}
             >
-              <span className="text-3xl mb-1 drop-shadow-sm">{category.icon}</span>
-              <span className="text-xs font-semibold text-on-surface-secondary group-hover:text-primary-focus transition-colors text-center">
+              <span className="text-6xl mb-4 drop-shadow-sm">{category.icon}</span>
+              <span className="text-base font-semibold text-on-surface-secondary group-hover:text-primary-focus transition-colors text-center">
                 {category.name}
               </span>
             </Link>
