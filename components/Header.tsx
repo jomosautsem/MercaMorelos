@@ -48,7 +48,7 @@ const Header: React.FC = () => {
   };
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-    `relative px-3 py-2 rounded-md text-sm font-semibold transition-colors duration-300 ${isActive ? 'text-white font-bold' : 'text-slate-300 hover:text-white'}`;
+    `relative px-3 py-2 rounded-md text-sm font-semibold transition-colors duration-300 ${isActive ? 'text-slate-900 font-bold' : 'text-slate-700 hover:text-slate-900'}`;
   
   const mobileNavLinkClass = ({ isActive }: { isActive: boolean }) =>
     `block px-4 py-3 rounded-md text-base font-medium ${isActive ? 'bg-primary text-white' : 'text-on-surface hover:bg-surface-light'}`;
@@ -56,11 +56,11 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="bg-[#6A7B76] sticky top-0 z-40 shadow-md">
+      <header className="bg-orange-300 sticky top-0 z-40 shadow-md">
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center">
-              <Link to="/" className="text-3xl font-extrabold text-white tracking-tight">
+              <Link to="/" className="text-3xl font-extrabold text-slate-900 tracking-tight">
                 MercaMorelos
               </Link>
               <div className="hidden md:block ml-10">
@@ -80,7 +80,7 @@ const Header: React.FC = () => {
                   {user?.role === 'admin' && (
                     <NavLink
                       to="/admin"
-                      className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-semibold ${isActive ? 'bg-secondary text-white' : 'text-slate-300 hover:text-white'}`}
+                      className={({ isActive }) => `px-3 py-2 rounded-md text-sm font-semibold ${isActive ? 'bg-orange-400 text-slate-900' : 'text-slate-700 hover:text-slate-900'}`}
                     >
                       Panel de Admin
                     </NavLink>
@@ -93,7 +93,7 @@ const Header: React.FC = () => {
               <form onSubmit={handleSearch} className="w-full max-w-lg">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <SearchIcon className="text-white/70" />
+                    <SearchIcon className="text-slate-600" />
                   </div>
                   <input
                     type="search"
@@ -101,7 +101,7 @@ const Header: React.FC = () => {
                     id="search"
                     value={localQuery}
                     onChange={(e) => setLocalQuery(e.target.value)}
-                    className="block w-full pl-12 pr-4 py-2.5 border border-transparent bg-white/25 rounded-full leading-5 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-white focus:bg-white/30 sm:text-sm transition-all"
+                    className="block w-full pl-12 pr-4 py-2.5 border border-transparent bg-white/50 rounded-full leading-5 text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white/75 sm:text-sm transition-all"
                     placeholder="Buscar..."
                   />
                 </div>
@@ -114,13 +114,13 @@ const Header: React.FC = () => {
                   <div className="relative" ref={dropdownRef}>
                     <button 
                       onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
-                      className="flex items-center p-2 rounded-full hover:bg-black/20 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#6A7B76] focus:ring-white"
+                      className="flex items-center p-2 rounded-full hover:bg-orange-400/50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-orange-300 focus:ring-slate-800"
                       aria-label="Menú de usuario"
                       aria-haspopup="true"
                       aria-expanded={isDropdownOpen}
                     >
                       <UserIcon />
-                      <span className="text-sm text-white hidden sm:inline-block mx-2 font-medium">Hola, {user?.firstName}</span>
+                      <span className="text-sm text-slate-800 hidden sm:inline-block mx-2 font-medium">Hola, {user?.firstName}</span>
                       <ChevronDownIcon className="w-4 h-4 hidden sm:inline-block"/>
                     </button>
                     {isDropdownOpen && (
@@ -147,7 +147,7 @@ const Header: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  <Link to="/auth" className="p-2 rounded-full hover:bg-black/20 text-white" aria-label="Iniciar sesión">
+                  <Link to="/auth" className="p-2 rounded-full hover:bg-orange-400/50 text-slate-800" aria-label="Iniciar sesión">
                     <UserIcon />
                   </Link>
                 )}
@@ -156,7 +156,7 @@ const Header: React.FC = () => {
               {user?.role !== 'admin' && (
                   <>
                     {user?.role === 'customer' && (
-                      <Link to="/messages" className="relative p-2 rounded-full hover:bg-black/20 text-white" aria-label="Messages">
+                      <Link to="/messages" className="relative p-2 rounded-full hover:bg-orange-400/50 text-slate-800" aria-label="Messages">
                         <EnvelopeIcon />
                         {unreadMessagesCount > 0 && (
                             <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-secondary text-white text-xs flex items-center justify-center transform translate-x-1/4 -translate-y-1/4 font-bold">
@@ -165,7 +165,7 @@ const Header: React.FC = () => {
                         )}
                       </Link>
                     )}
-                    <Link to="/cart" className="relative p-2 rounded-full hover:bg-black/20 text-white" aria-label="Carrito de compras">
+                    <Link to="/cart" className="relative p-2 rounded-full hover:bg-orange-400/50 text-slate-800" aria-label="Carrito de compras">
                       <ShoppingCartIcon />
                       {cartCount > 0 && (
                           <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-secondary text-white text-xs flex items-center justify-center transform translate-x-1/2 -translate-y-1/2 font-bold">
@@ -178,7 +178,7 @@ const Header: React.FC = () => {
               <div className="md:hidden">
                 <button
                   onClick={() => setIsMobileMenuOpen(true)}
-                  className="p-2 rounded-full hover:bg-black/20 text-white"
+                  className="p-2 rounded-full hover:bg-orange-400/50 text-slate-800"
                   aria-label="Abrir menú"
                 >
                   <MenuIcon />
