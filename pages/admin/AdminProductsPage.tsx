@@ -3,13 +3,21 @@ import { Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 
 const AdminProductsPage: React.FC = () => {
-    const { allProducts, deleteProduct } = useAppContext();
+    const { allProducts, archiveProduct, deleteProductPermanently } = useAppContext();
 
     const handleArchive = (productId: string, productName: string) => {
         if (window.confirm(`¿Estás seguro de que quieres archivar el producto "${productName}"? No será visible en la tienda.`)) {
-            deleteProduct(productId);
+            archiveProduct(productId);
         }
     };
+
+    const handleDelete = (productId: string, productName: string) => {
+        const confirmationMessage = `¡ACCIÓN IRREVERSIBLE!\n\n¿Estás seguro de que quieres eliminar PERMANENTEMENTE el producto "${productName}"? Esta acción no se puede deshacer.\n\nEl producto será eliminado de la tienda y del catálogo, pero permanecerá en el historial de pedidos existentes para mantener la integridad de los registros.`;
+        if (window.confirm(confirmationMessage)) {
+            deleteProductPermanently(productId);
+        }
+    };
+
 
     return (
         <div>
@@ -48,7 +56,8 @@ const AdminProductsPage: React.FC = () => {
                                 <td className="px-6 py-4 capitalize">{product.category}</td>
                                 <td className="px-6 py-4 flex items-center space-x-3">
                                     <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-primary hover:underline">Editar</Link>
-                                    <button onClick={() => handleArchive(product.id, product.name)} className="font-medium text-red-500 hover:underline">Archivar</button>
+                                    <button onClick={() => handleArchive(product.id, product.name)} className="font-medium text-yellow-600 hover:underline">Archivar</button>
+                                    <button onClick={() => handleDelete(product.id, product.name)} className="font-medium text-red-600 hover:underline">Eliminar</button>
                                 </td>
                             </tr>
                         ))}

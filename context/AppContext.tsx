@@ -32,7 +32,8 @@ interface AppContextType {
   customers: User[];
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
-  deleteProduct: (productId: string) => Promise<void>;
+  archiveProduct: (productId: string) => Promise<void>;
+  deleteProductPermanently: (productId: string) => Promise<void>;
   deleteCustomer: (customerId: string) => Promise<void>;
   messages: Message[];
   sendMessage: (text: string, toId: string) => Promise<void>;
@@ -337,15 +338,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const deleteProduct = useCallback(async (productId: string) => {
+  const archiveProduct = useCallback(async (productId: string) => {
     setError(null);
     try {
-      await mockApi.deleteProduct(productId);
+      await mockApi.archiveProduct(productId);
       setAllProducts(prev => prev.filter(p => p.id !== productId));
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
       alert(`No se pudo archivar el producto: ${errorMessage}`);
+    }
+  }, []);
+  
+  const deleteProductPermanently = useCallback(async (productId: string) => {
+    setError(null);
+    try {
+      await mockApi.deleteProductPermanently(productId);
+      setAllProducts(prev => prev.filter(p => p.id !== productId));
+    } catch (e: any) {
+      const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+      setError(errorMessage);
+      alert(`Error al eliminar el producto: ${errorMessage}`);
     }
   }, []);
   
@@ -451,7 +464,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     customers,
     addProduct,
     updateProduct,
-    deleteProduct,
+    archiveProduct,
+    deleteProductPermanently,
     deleteCustomer,
     messages,
     sendMessage,

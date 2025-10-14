@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 
 const AdminDashboardPage: React.FC = () => {
-    const { user, allProducts, customers, orders, deleteProduct } = useAppContext();
+    const { user, allProducts, customers, orders, archiveProduct } = useAppContext();
     
     const outOfStockProducts = useMemo(() => {
         return allProducts.filter(p => p.stock === 0);
@@ -11,7 +11,7 @@ const AdminDashboardPage: React.FC = () => {
 
     const handleArchive = (productId: string, productName: string) => {
         if (window.confirm(`¿Estás seguro de que quieres archivar el producto "${productName}"? No será visible en la tienda.`)) {
-            deleteProduct(productId);
+            archiveProduct(productId);
         }
     };
 

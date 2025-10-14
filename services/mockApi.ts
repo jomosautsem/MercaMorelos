@@ -372,23 +372,27 @@ export const mockApi = {
         }
         return null;
     },
-    async deleteProduct(productId: string): Promise<boolean> {
+    async archiveProduct(productId: string): Promise<boolean> {
         await delay(500);
-        const productInOrders = mockOrders.some(order => order.items.some(item => item.id === productId));
         const index = mockProducts.findIndex(p => p.id === productId);
-
-        if (index === -1) {
-            return false;
-        }
-
-        if (productInOrders) {
-            // Archive it (soft delete)
+        if (index > -1) {
             mockProducts[index].isArchived = true;
-        } else {
-            // Delete it permanently
-            mockProducts.splice(index, 1);
+            return true;
         }
-        return true;
+        return false;
+    },
+    async deleteProductPermanently(productId: string): Promise<boolean> {
+        await delay(500);
+        // Force deletion: The product is removed from the main catalog.
+        // It will remain in past orders for historical record-keeping, as order items are copies.
+        const index = mockProducts.findIndex(p => p.id === productId);
+        if (index > -1) {
+            mockProducts.splice(index, 1);
+            // Also delete related reviews
+            mockReviews = mockReviews.filter(r => r.productId !== productId);
+            return true;
+        }
+        return false;
     },
     async getCustomers(): Promise<User[]> {
         await delay(400);
