@@ -12,20 +12,20 @@ const AdminOrdersPage: React.FC = () => {
 
     const getStatusClasses = (status: Order['status']) => {
         switch (status) {
-            case 'Procesando': return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-            case 'Enviado': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-            case 'Entregado': return 'bg-green-500/10 text-green-400 border-green-500/20';
-            case 'Cancelado': return 'bg-red-500/10 text-red-400 border-red-500/20';
-            default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+            case 'Procesando': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'Enviado': return 'bg-blue-100 text-blue-800 border-blue-200';
+            case 'Entregado': return 'bg-green-100 text-green-800 border-green-200';
+            case 'Cancelado': return 'bg-red-100 text-red-800 border-red-200';
+            default: return 'bg-gray-100 text-gray-800 border-gray-200';
         }
     };
 
     return (
         <div>
             <h1 className="text-3xl font-bold mb-6 tracking-tight">Gestionar Pedidos</h1>
-            <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+            <div className="bg-surface rounded-lg shadow-md overflow-x-auto border border-border-color">
                 <table className="w-full text-sm text-left text-on-surface-secondary">
-                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
+                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface-light">
                         <tr>
                             <th scope="col" className="px-6 py-3">ID Pedido</th>
                             <th scope="col" className="px-6 py-3">Cliente</th>
@@ -37,7 +37,7 @@ const AdminOrdersPage: React.FC = () => {
                     </thead>
                     <tbody>
                         {orders.map(order => (
-                            <tr key={order.id} className="border-b border-surface hover:bg-surface">
+                            <tr key={order.id} className="border-b border-border-color hover:bg-surface-light">
                                 <th scope="row" className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
                                     #{order.id}
                                 </th>
@@ -57,7 +57,7 @@ const AdminOrdersPage: React.FC = () => {
                                     </select>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <Link to={`/admin/orders/${order.id}`} className="font-medium text-primary hover:underline">Ver Detalles</Link>
+                                    <Link to={`/admin/orders/${order.id}`} className="font-medium text-primary-focus hover:underline">Ver Detalles</Link>
                                 </td>
                             </tr>
                         ))}

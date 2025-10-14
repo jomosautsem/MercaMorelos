@@ -47,15 +47,15 @@ const AdminArchivedProductsPage: React.FC = () => {
                 <h1 className="text-3xl font-bold tracking-tight">Productos Archivados</h1>
                  <Link
                     to="/admin/products"
-                    className="text-sm font-semibold text-primary hover:underline"
+                    className="text-sm font-semibold text-primary-focus hover:underline"
                 >
                     &larr; Volver a Productos Activos
                 </Link>
             </div>
             {archivedProducts.length > 0 ? (
-                <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+                <div className="bg-surface rounded-lg shadow-md overflow-x-auto border border-border-color">
                     <table className="w-full text-sm text-left text-on-surface-secondary">
-                        <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
+                        <thead className="text-xs text-on-surface-secondary uppercase bg-surface-light">
                             <tr>
                                 <th scope="col" className="px-6 py-3">Imagen</th>
                                 <th scope="col" className="px-6 py-3">Nombre</th>
@@ -67,7 +67,7 @@ const AdminArchivedProductsPage: React.FC = () => {
                         </thead>
                         <tbody>
                             {archivedProducts.map(product => (
-                                <tr key={product.id} className="border-b border-surface hover:bg-surface">
+                                <tr key={product.id} className="border-b border-border-color hover:bg-surface-light">
                                     <td className="px-6 py-4">
                                         <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded"/>
                                     </td>
@@ -78,7 +78,7 @@ const AdminArchivedProductsPage: React.FC = () => {
                                     <td className="px-6 py-4 font-bold text-red-500">{product.stock}</td>
                                     <td className="px-6 py-4 capitalize">{product.category}</td>
                                     <td className="px-6 py-4 flex items-center space-x-3">
-                                        <button onClick={() => handleOpenRestoreModal(product)} className="font-medium text-primary hover:underline">Restaurar</button>
+                                        <button onClick={() => handleOpenRestoreModal(product)} className="font-medium text-primary-focus hover:underline">Restaurar</button>
                                         <button onClick={() => handleDelete(product.id, product.name)} className="font-medium text-red-600 hover:underline">Eliminar</button>
                                     </td>
                                 </tr>
@@ -87,16 +87,16 @@ const AdminArchivedProductsPage: React.FC = () => {
                     </table>
                 </div>
             ) : (
-                 <div className="text-center py-16 bg-surface-light rounded-lg">
+                 <div className="text-center py-16 bg-surface-light rounded-lg border border-border-color">
                     <p className="text-lg text-on-surface-secondary">No hay productos archivados.</p>
                 </div>
             )}
 
             {productToRestore && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300" aria-modal="true" role="dialog">
-                    <div className="bg-surface p-8 rounded-lg shadow-2xl max-w-md w-full transform transition-all duration-300">
+                    <div className="bg-surface p-8 rounded-lg shadow-2xl max-w-md w-full transform transition-all duration-300 border border-border-color">
                         <h2 className="text-2xl font-bold mb-4 text-on-surface">Restaurar Producto</h2>
-                        <p className="mb-6 text-on-surface-secondary">Vas a restaurar el producto: <strong className="text-primary">{productToRestore.name}</strong>. Al añadir stock, volverá a estar visible en la tienda.</p>
+                        <p className="mb-6 text-on-surface-secondary">Vas a restaurar el producto: <strong className="text-primary-focus">{productToRestore.name}</strong>. Al añadir stock, volverá a estar visible en la tienda.</p>
                         <form onSubmit={handleRestoreSubmit}>
                             <label htmlFor="stock" className="block text-sm font-medium text-on-surface-secondary mb-2">
                                 Nueva cantidad en Stock
@@ -106,17 +106,17 @@ const AdminArchivedProductsPage: React.FC = () => {
                                 id="stock"
                                 value={newStock}
                                 onChange={(e) => setNewStock(e.target.value)}
-                                className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-surface rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
                                 placeholder="Ej: 10"
                                 min="1"
                                 required
                                 autoFocus
                             />
                             <div className="mt-8 flex justify-end space-x-4">
-                                <button type="button" onClick={handleCloseRestoreModal} className="py-2 px-5 border border-surface-light rounded-md shadow-sm text-sm font-semibold text-on-surface bg-surface-light hover:bg-surface transition-colors">
+                                <button type="button" onClick={handleCloseRestoreModal} className="py-2 px-5 border border-border-color rounded-md shadow-sm text-sm font-semibold text-on-surface bg-surface-light hover:bg-border-color transition-colors">
                                     Cancelar
                                 </button>
-                                <button type="submit" disabled={loading} className="py-2 px-5 border border-transparent rounded-md shadow-sm text-sm font-semibold text-white bg-primary hover:bg-primary-focus disabled:bg-gray-500 transition-colors">
+                                <button type="submit" disabled={loading} className="py-2 px-5 border border-transparent rounded-md shadow-sm text-sm font-semibold text-slate-900 bg-primary hover:bg-primary-focus disabled:bg-gray-400 transition-colors">
                                     {loading ? 'Restaurando...' : 'Añadir y Restaurar'}
                                 </button>
                             </div>

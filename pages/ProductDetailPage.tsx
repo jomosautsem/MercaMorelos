@@ -31,7 +31,7 @@ const ReviewForm: React.FC<{ productId: string, onSubmit: () => void }> = ({ pro
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-surface-light p-6 rounded-lg shadow-md mt-6">
+        <form onSubmit={handleSubmit} className="bg-surface-light p-6 rounded-lg shadow-sm mt-6">
             <h3 className="text-xl font-bold mb-4">Escribe tu opinión</h3>
             {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
             <div className="mb-4">
@@ -45,11 +45,11 @@ const ReviewForm: React.FC<{ productId: string, onSubmit: () => void }> = ({ pro
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     rows={4}
-                    className="w-full p-2 bg-surface border border-surface rounded-md focus:ring-primary focus:border-primary"
+                    className="w-full p-2 bg-surface border border-border-color rounded-md focus:ring-primary focus:border-primary"
                     placeholder="¿Qué te pareció el producto?"
                 />
             </div>
-            <button type="submit" disabled={isLoading || rating === 0} className="bg-primary text-white font-bold py-2 px-6 rounded-full hover:bg-primary-focus disabled:bg-gray-400 disabled:cursor-not-allowed">
+            <button type="submit" disabled={isLoading || rating === 0} className="bg-primary text-slate-900 font-bold py-2 px-6 rounded-full hover:bg-primary-focus disabled:bg-gray-400 disabled:cursor-not-allowed">
                 {isLoading ? 'Enviando...' : 'Enviar opinión'}
             </button>
         </form>
@@ -133,10 +133,10 @@ const ProductDetailPage: React.FC = () => {
   }
 
   return (
-    <>
-      <div className="bg-surface rounded-lg shadow-2xl p-6 md:p-10">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="bg-surface rounded-lg shadow-xl p-6 md:p-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-start">
-          <div className="rounded-lg overflow-hidden shadow-lg">
+          <div className="rounded-lg overflow-hidden shadow-md">
             <img src={product.imageUrl} alt={product.name} className={`w-full h-auto object-cover ${product.stock === 0 ? 'filter grayscale' : ''}`} />
           </div>
           <div>
@@ -151,16 +151,16 @@ const ProductDetailPage: React.FC = () => {
                 </div>
             )}
 
-            <p className="text-4xl font-bold text-primary mb-6">${product.price.toFixed(2)}</p>
+            <p className="text-4xl font-bold text-slate-800 mb-6">${product.price.toFixed(2)}</p>
             <p className="text-on-surface-secondary text-base leading-relaxed mb-8">{product.description}</p>
             
             <div className="mb-8">
               {product.stock > 5 ? (
-                   <p className="text-sm font-semibold text-green-400">En Stock</p>
+                   <p className="text-sm font-semibold text-green-600">En Stock</p>
               ) : product.stock > 0 ? (
-                  <p className="text-sm font-semibold text-yellow-400">¡Quedan pocas unidades! ({product.stock} disponibles)</p>
+                  <p className="text-sm font-semibold text-amber-600">¡Quedan pocas unidades! ({product.stock} disponibles)</p>
               ) : (
-                  <p className="text-sm font-semibold text-red-500">SIN STOCK</p>
+                  <p className="text-sm font-semibold text-red-600">SIN STOCK</p>
               )}
             </div>
             
@@ -168,7 +168,7 @@ const ProductDetailPage: React.FC = () => {
               <button 
                 onClick={() => addToCart(product)}
                 disabled={isOutOfStock}
-                className="w-full sm:w-auto bg-primary text-white font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/20"
+                className="w-full sm:w-auto bg-primary text-slate-900 font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40"
               >
                 {isOutOfStock ? (product.stock === 0 ? 'SIN STOCK' : 'Stock máximo en carrito') : 'Añadir al carrito'}
               </button>
@@ -192,7 +192,7 @@ const ProductDetailPage: React.FC = () => {
         {reviews.length > 0 ? (
           <div className="space-y-6 mt-8">
             {reviews.map(review => (
-              <div key={review.id} className="bg-surface p-6 rounded-lg shadow-md">
+              <div key={review.id} className="bg-surface p-6 rounded-lg shadow-md border border-border-color">
                 <div className="flex items-center mb-2">
                   <StarRating rating={review.rating} size="sm" />
                   <p className="ml-4 font-bold text-on-surface">{review.userName}</p>
@@ -209,7 +209,7 @@ const ProductDetailPage: React.FC = () => {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 

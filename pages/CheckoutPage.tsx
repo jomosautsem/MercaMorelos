@@ -40,31 +40,31 @@ const CheckoutPage: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-4xl font-extrabold mb-10 text-center tracking-tight">Finalizar Compra</h1>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-12">
         <div className="lg:col-span-3">
           <form onSubmit={handleSubmit}>
-            <div className="bg-surface p-6 rounded-lg shadow-lg mb-8">
+            <div className="bg-surface p-6 rounded-lg shadow-md border border-border-color mb-8">
               <h2 className="text-2xl font-bold mb-4">Información de Envío</h2>
               <div className="space-y-4">
                   <div>
                       <label className="block text-sm font-medium text-on-surface-secondary">Nombre Completo</label>
-                      <input type="text" readOnly value={`${user?.firstName} ${user?.paternalLastName} ${user?.maternalLastName}`} className="mt-1 block w-full bg-surface-light border-surface-light rounded-md shadow-sm text-on-surface" />
+                      <input type="text" readOnly value={`${user?.firstName} ${user?.paternalLastName} ${user?.maternalLastName}`} className="mt-1 block w-full bg-surface-light border-border-color rounded-md shadow-sm text-on-surface-secondary" />
                   </div>
                    <div>
                       <label className="block text-sm font-medium text-on-surface-secondary">Dirección de Envío</label>
-                      <input type="text" readOnly value={user?.address || ''} className="mt-1 block w-full bg-surface-light border-surface-light rounded-md shadow-sm text-on-surface" />
+                      <input type="text" readOnly value={user?.address || ''} className="mt-1 block w-full bg-surface-light border-border-color rounded-md shadow-sm text-on-surface-secondary" />
                   </div>
               </div>
             </div>
 
-            <div className="bg-surface p-6 rounded-lg shadow-lg">
+            <div className="bg-surface p-6 rounded-lg shadow-md border border-border-color">
                 <h2 className="text-2xl font-bold mb-4">Método de Pago</h2>
                 <div className="space-y-4">
-                    <div onClick={() => setPaymentMethod('debit')} className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'debit' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-surface-light hover:border-primary/50'}`}>
+                    <div onClick={() => setPaymentMethod('debit')} className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'debit' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border-color hover:border-primary/50'}`}>
                         <label className="flex items-center">
-                            <input type="radio" name="paymentMethod" value="debit" checked={paymentMethod === 'debit'} onChange={() => {}} className="h-4 w-4 text-primary focus:ring-primary border-surface-light bg-surface" />
+                            <input type="radio" name="paymentMethod" value="debit" checked={paymentMethod === 'debit'} onChange={() => {}} className="h-4 w-4 text-primary focus:ring-primary border-border-color bg-surface" />
                             <span className="ml-3 font-medium text-on-surface">Tarjeta de Débito</span>
                         </label>
                     </div>
@@ -78,7 +78,7 @@ const CheckoutPage: React.FC = () => {
                                     value={cardDetails.number}
                                     onChange={handleCardChange}
                                     placeholder="**** **** **** ****"
-                                    className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-surface-light rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
+                                    className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <div>
@@ -89,7 +89,7 @@ const CheckoutPage: React.FC = () => {
                                         value={cardDetails.expiry}
                                         onChange={handleCardChange}
                                         placeholder="MM/YY"
-                                        className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-surface-light rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
+                                        className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
                                 </div>
                                 <div className="col-span-2">
                                      <label className="block text-sm font-medium text-on-surface-secondary">CVC</label>
@@ -99,15 +99,15 @@ const CheckoutPage: React.FC = () => {
                                         value={cardDetails.cvc}
                                         onChange={handleCardChange}
                                         placeholder="123"
-                                        className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-surface-light rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
+                                        className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary" />
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    <div onClick={() => setPaymentMethod('mercadopago')} className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'mercadopago' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-surface-light hover:border-primary/50'}`}>
+                    <div onClick={() => setPaymentMethod('mercadopago')} className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'mercadopago' ? 'border-primary ring-2 ring-primary/20 bg-primary/5' : 'border-border-color hover:border-primary/50'}`}>
                          <label className="flex items-center">
-                            <input type="radio" name="paymentMethod" value="mercadopago" checked={paymentMethod === 'mercadopago'} onChange={() => {}} className="h-4 w-4 text-primary focus:ring-primary border-surface-light bg-surface" />
+                            <input type="radio" name="paymentMethod" value="mercadopago" checked={paymentMethod === 'mercadopago'} onChange={() => {}} className="h-4 w-4 text-primary focus:ring-primary border-border-color bg-surface" />
                             <span className="ml-3 font-medium text-on-surface">Mercado Pago</span>
                         </label>
                     </div>
@@ -119,13 +119,13 @@ const CheckoutPage: React.FC = () => {
                 </div>
             </div>
 
-            <button type="submit" className="w-full mt-8 bg-primary text-white font-bold py-4 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/20">
+            <button type="submit" className="w-full mt-8 bg-primary text-slate-900 font-bold py-4 px-6 rounded-full hover:bg-primary-focus transition-all duration-300 transform hover:scale-105 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40">
                 Pagar ${cartTotal.toFixed(2)}
             </button>
           </form>
         </div>
         <div className="lg:col-span-2">
-            <div className="bg-surface p-6 rounded-lg shadow-lg sticky top-28">
+            <div className="bg-surface p-6 rounded-lg shadow-md border border-border-color sticky top-28">
                 <h2 className="text-2xl font-bold mb-4">Resumen del Carrito</h2>
                 <ul className="space-y-4 max-h-80 overflow-y-auto pr-2">
                     {cart.map(item => (
@@ -141,14 +141,14 @@ const CheckoutPage: React.FC = () => {
                         </li>
                     ))}
                 </ul>
-                <div className="border-t border-surface-light mt-4 pt-4 space-y-2">
+                <div className="border-t border-border-color mt-4 pt-4 space-y-2">
                      <div className="flex justify-between text-on-surface-secondary">
                         <span>Subtotal</span>
                         <span className="font-medium text-on-surface">${cartTotal.toFixed(2)}</span>
                     </div>
                      <div className="flex justify-between text-on-surface-secondary">
                         <span>Envío</span>
-                        <span className="font-medium text-primary">Gratis</span>
+                        <span className="font-medium text-primary-focus">Gratis</span>
                     </div>
                     <div className="flex justify-between text-lg font-bold text-on-surface pt-2">
                         <span>Total</span>

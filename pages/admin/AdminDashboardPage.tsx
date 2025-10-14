@@ -23,14 +23,14 @@ const AdminDashboardPage: React.FC = () => {
             </div>
             
             {outOfStockProducts.length > 0 && (
-                <div className="bg-surface-light p-6 rounded-lg shadow-md border-l-4 border-secondary">
+                <div className="bg-surface-light p-6 rounded-lg shadow-sm border-l-4 border-secondary">
                     <h2 className="text-xl font-semibold text-secondary-focus mb-4">Avisos de Stock: Productos Agotados</h2>
                     <ul className="space-y-3">
                         {outOfStockProducts.map(product => (
-                            <li key={product.id} className="flex items-center justify-between p-3 bg-surface rounded-md">
+                            <li key={product.id} className="flex items-center justify-between p-3 bg-surface rounded-md border border-border-color">
                                 <span className="font-medium text-on-surface">{product.name}</span>
                                 <div className="flex items-center space-x-3">
-                                    <Link to={`/admin/products/edit/${product.id}`} className="font-semibold text-sm text-primary hover:underline">Añadir Stock</Link>
+                                    <Link to={`/admin/products/edit/${product.id}`} className="font-semibold text-sm text-primary-focus hover:underline">Añadir Stock</Link>
                                     <button onClick={() => handleArchive(product.id, product.name)} className="font-semibold text-sm text-red-500 hover:underline">Archivar</button>
                                 </div>
                             </li>
@@ -40,15 +40,15 @@ const AdminDashboardPage: React.FC = () => {
             )}
 
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-surface-light p-6 rounded-lg shadow-md border-l-4 border-primary">
+                <div className="bg-surface-light p-6 rounded-lg shadow-sm border-l-4 border-primary">
                     <h2 className="text-xl font-semibold text-on-surface-secondary">Total de Productos</h2>
                     <p className="text-5xl font-extrabold mt-2 text-on-surface">{allProducts.length}</p>
                 </div>
-                <div className="bg-surface-light p-6 rounded-lg shadow-md border-l-4 border-primary">
+                <div className="bg-surface-light p-6 rounded-lg shadow-sm border-l-4 border-primary">
                     <h2 className="text-xl font-semibold text-on-surface-secondary">Total de Clientes</h2>
                     <p className="text-5xl font-extrabold mt-2 text-on-surface">{customers.length}</p>
                 </div>
-                <div className="bg-surface-light p-6 rounded-lg shadow-md border-l-4 border-primary">
+                <div className="bg-surface-light p-6 rounded-lg shadow-sm border-l-4 border-primary">
                     <h2 className="text-xl font-semibold text-on-surface-secondary">Total de Pedidos</h2>
                     <p className="text-5xl font-extrabold mt-2 text-on-surface">{orders.length}</p>
                 </div>

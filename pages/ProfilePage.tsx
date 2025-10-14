@@ -97,7 +97,7 @@ const ProfilePage: React.FC = () => {
                 value={value}
                 onChange={onChange}
                 disabled={disabled}
-                className="mt-1 block w-full px-3 py-2 bg-surface-light border border-surface-light rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:bg-surface disabled:text-on-surface-secondary"
+                className="mt-1 block w-full px-3 py-2 bg-surface-light border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary disabled:bg-surface disabled:text-on-surface-secondary"
             />
         </div>
     );
@@ -107,20 +107,20 @@ const ProfilePage: React.FC = () => {
     }
 
     return (
-        <div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <h1 className="text-4xl font-extrabold mb-8 tracking-tight">Mi Perfil</h1>
             {message && (
-                <div className={`mb-6 p-4 rounded-md text-sm font-semibold ${message.type === 'success' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
+                <div className={`mb-6 p-4 rounded-md text-sm font-semibold ${message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                     {message.text}
                 </div>
             )}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                    <form onSubmit={handleProfileSubmit} className="bg-surface p-6 rounded-lg shadow-lg">
+                    <form onSubmit={handleProfileSubmit} className="bg-surface p-6 rounded-lg shadow-md border border-border-color">
                         <div className="flex justify-between items-center mb-6">
                              <h2 className="text-2xl font-bold">Datos Personales</h2>
                              {!isEditing && (
-                                <button type="button" onClick={() => setIsEditing(true)} className="text-sm font-semibold text-primary hover:underline">Editar</button>
+                                <button type="button" onClick={() => setIsEditing(true)} className="text-sm font-semibold text-primary-focus hover:underline">Editar</button>
                              )}
                         </div>
                         <div className="space-y-4">
@@ -130,13 +130,13 @@ const ProfilePage: React.FC = () => {
                             <FormField name="address" label="Dirección de Envío" value={formData.address} onChange={handleFormChange} disabled={!isEditing} />
                             <div>
                                 <label className="block text-sm font-medium text-on-surface-secondary">Correo Electrónico</label>
-                                <input type="email" value={user.email} disabled className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface-secondary border border-surface-light rounded-md shadow-sm"/>
+                                <input type="email" value={user.email} disabled className="mt-1 block w-full px-3 py-2 bg-surface text-on-surface-secondary border border-border-color rounded-md shadow-sm"/>
                             </div>
                         </div>
                         {isEditing && (
                             <div className="flex justify-end space-x-4 mt-8">
-                                <button type="button" onClick={() => setIsEditing(false)} className="py-2 px-4 border border-surface-light rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-light hover:bg-surface">Cancelar</button>
-                                <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-focus disabled:opacity-50">
+                                <button type="button" onClick={() => setIsEditing(false)} className="py-2 px-4 border border-border-color rounded-md shadow-sm text-sm font-medium text-on-surface bg-surface-light hover:bg-border-color">Cancelar</button>
+                                <button type="submit" disabled={isLoading} className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-slate-900 bg-primary hover:bg-primary-focus disabled:opacity-50">
                                     {isLoading ? 'Guardando...' : 'Guardar Cambios'}
                                 </button>
                             </div>
@@ -144,20 +144,20 @@ const ProfilePage: React.FC = () => {
                     </form>
                 </div>
                 <div>
-                     <form onSubmit={handlePasswordSubmit} className="bg-surface p-6 rounded-lg shadow-lg">
+                     <form onSubmit={handlePasswordSubmit} className="bg-surface p-6 rounded-lg shadow-md border border-border-color">
                          <h2 className="text-2xl font-bold mb-6">Cambiar Contraseña</h2>
                          <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-on-surface-secondary">Contraseña Actual</label>
-                                <input type="password" name="current" value={passwordData.current} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-surface-light rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                                <input type="password" name="current" value={passwordData.current} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-on-surface-secondary">Nueva Contraseña</label>
-                                <input type="password" name="new" value={passwordData.new} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-surface-light rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                                <input type="password" name="new" value={passwordData.new} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-on-surface-secondary">Confirmar Nueva Contraseña</label>
-                                <input type="password" name="confirm" value={passwordData.confirm} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-surface-light rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
+                                <input type="password" name="confirm" value={passwordData.confirm} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                             </div>
                          </div>
                          <div className="mt-8">

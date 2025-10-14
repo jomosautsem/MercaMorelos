@@ -6,7 +6,7 @@ const SearchPage: React.FC = () => {
   const { searchQuery, searchResults } = useAppContext();
 
   return (
-    <div>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {searchQuery ? (
         <h1 className="text-4xl font-extrabold mb-10 text-on-surface tracking-tight">
           Resultados para: <span className="text-primary">"{searchQuery}"</span>

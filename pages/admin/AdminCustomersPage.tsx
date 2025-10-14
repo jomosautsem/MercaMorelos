@@ -15,9 +15,9 @@ const AdminCustomersPage: React.FC = () => {
     return (
         <div>
             <h1 className="text-3xl font-bold mb-6 tracking-tight">Clientes Registrados</h1>
-            <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+            <div className="bg-surface rounded-lg shadow-md overflow-x-auto border border-border-color">
                 <table className="w-full text-sm text-left text-on-surface-secondary">
-                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
+                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface-light">
                         <tr>
                             <th scope="col" className="px-6 py-3">Nombre</th>
                             <th scope="col" className="px-6 py-3">Correo Electrónico</th>
@@ -27,7 +27,7 @@ const AdminCustomersPage: React.FC = () => {
                     </thead>
                     <tbody>
                         {customers.map(customer => (
-                            <tr key={customer.id} className="border-b border-surface hover:bg-surface">
+                            <tr key={customer.id} className="border-b border-border-color hover:bg-surface-light">
                                 <th scope="row" className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
                                     {`${customer.firstName} ${customer.paternalLastName}`}
                                 </th>
@@ -36,7 +36,7 @@ const AdminCustomersPage: React.FC = () => {
                                 <td className="px-6 py-4 flex items-center space-x-4">
                                     <Link
                                         to={`/admin/chat/${customer.id}`}
-                                        className="font-medium text-primary hover:underline flex items-center"
+                                        className="font-medium text-primary-focus hover:underline flex items-center"
                                     >
                                         <EnvelopeIcon className="w-5 h-5 mr-1" />
                                         Contactar

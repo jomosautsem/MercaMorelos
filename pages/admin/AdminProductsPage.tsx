@@ -25,14 +25,14 @@ const AdminProductsPage: React.FC = () => {
                 <h1 className="text-3xl font-bold tracking-tight">Gestionar Productos</h1>
                 <Link
                     to="/admin/products/new"
-                    className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary-focus transition-colors"
+                    className="bg-primary text-slate-900 font-bold py-2 px-4 rounded-lg hover:bg-primary-focus transition-colors"
                 >
                     Añadir Producto
                 </Link>
             </div>
-            <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+            <div className="bg-surface rounded-lg shadow-md overflow-x-auto border border-border-color">
                 <table className="w-full text-sm text-left text-on-surface-secondary">
-                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
+                    <thead className="text-xs text-on-surface-secondary uppercase bg-surface-light">
                         <tr>
                             <th scope="col" className="px-6 py-3">Imagen</th>
                             <th scope="col" className="px-6 py-3">Nombre</th>
@@ -44,7 +44,7 @@ const AdminProductsPage: React.FC = () => {
                     </thead>
                     <tbody>
                         {allProducts.map(product => (
-                            <tr key={product.id} className="border-b border-surface hover:bg-surface">
+                            <tr key={product.id} className="border-b border-border-color hover:bg-surface-light">
                                 <td className="px-6 py-4">
                                     <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded"/>
                                 </td>
@@ -55,7 +55,7 @@ const AdminProductsPage: React.FC = () => {
                                 <td className="px-6 py-4">{product.stock}</td>
                                 <td className="px-6 py-4 capitalize">{product.category}</td>
                                 <td className="px-6 py-4 flex items-center space-x-3">
-                                    <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-primary hover:underline">Editar</Link>
+                                    <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-primary-focus hover:underline">Editar</Link>
                                     <button onClick={() => handleArchive(product.id, product.name)} className="font-medium text-yellow-600 hover:underline">Archivar</button>
                                     <button onClick={() => handleDelete(product.id, product.name)} className="font-medium text-red-600 hover:underline">Eliminar</button>
                                 </td>

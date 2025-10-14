@@ -17,16 +17,16 @@ const ProductListPage: React.FC = () => {
   const title = categoryId === 'dama' ? 'Ropa de Dama' : 'Ropa de Niño';
 
   return (
-    <div>
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-4xl font-extrabold mb-10 text-on-surface capitalize tracking-tight">{title}</h1>
       {loading ? (
          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className="bg-surface rounded-lg shadow-lg h-96 animate-pulse"></div>
+                <div key={index} className="bg-surface rounded-lg shadow-md h-96 animate-pulse"></div>
             ))}
          </div>
       ) : error ? (
-        <div className="text-center py-10 text-red-400 font-semibold">Error al cargar productos: {error}</div>
+        <div className="text-center py-10 text-red-500 font-semibold">Error al cargar productos: {error}</div>
       ) : products.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {products.map(product => (

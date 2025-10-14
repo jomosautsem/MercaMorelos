@@ -19,7 +19,7 @@ const FormField: React.FC<{
             value={value}
             onChange={onChange}
             required={required}
-            className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-surface-light rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+            className="mt-1 block w-full px-4 py-2.5 bg-surface-light text-on-surface border border-border-color rounded-md shadow-sm placeholder-on-surface-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
         />
     </div>
 );
@@ -97,12 +97,12 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-center py-10">
-      <div className="max-w-md w-full bg-surface p-8 rounded-lg shadow-2xl">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex justify-center items-center py-10">
+      <div className="max-w-md w-full bg-surface p-8 rounded-lg shadow-lg border border-border-color">
         <h2 className="text-3xl font-bold text-center mb-6 tracking-tight">{isRegistering ? 'Crear una Cuenta' : 'Iniciar Sesión'}</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-            {infoMessage && <p className="text-blue-400 text-sm text-center bg-blue-500/10 p-3 rounded-md">{infoMessage}</p>}
-            {error && <p className="text-red-400 text-sm text-center bg-red-500/10 p-3 rounded-md">{error}</p>}
+            {infoMessage && <p className="text-blue-600 text-sm text-center bg-blue-100 p-3 rounded-md">{infoMessage}</p>}
+            {error && <p className="text-red-600 text-sm text-center bg-red-100 p-3 rounded-md">{error}</p>}
             {isRegistering && (
                 <>
                     <FormField name="firstName" label="Nombre" value={formData.firstName} onChange={handleChange} />
@@ -121,7 +121,7 @@ const AuthPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary disabled:bg-gray-600"
+              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-slate-900 bg-primary hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary disabled:bg-gray-400 shadow-primary/30 hover:shadow-lg hover:shadow-primary/40"
             >
               {isLoading ? 'Procesando...' : (isRegistering ? 'Registrarse' : 'Iniciar Sesión')}
             </button>
@@ -129,7 +129,7 @@ const AuthPage: React.FC = () => {
         </form>
         <p className="mt-6 text-center text-sm text-on-surface-secondary">
           {isRegistering ? '¿Ya tienes una cuenta?' : '¿No tienes una cuenta?'}
-          <button onClick={() => { setIsRegistering(!isRegistering); setError(''); setInfoMessage(''); }} className="font-medium text-primary hover:text-primary-focus ml-1">
+          <button onClick={() => { setIsRegistering(!isRegistering); setError(''); setInfoMessage(''); }} className="font-medium text-primary-focus hover:text-amber-600 ml-1">
             {isRegistering ? 'Inicia Sesión' : 'Regístrate'}
           </button>
         </p>

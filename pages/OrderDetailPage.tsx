@@ -40,12 +40,14 @@ const OrderDetailPage: React.FC = () => {
 
     if (!order) {
         return (
-            <div className="text-center py-20">
-                <h1 className="text-3xl font-bold mb-4">Pedido no encontrado</h1>
-                <p className="text-on-surface-secondary mb-8">El pedido que buscas no existe o ha sido eliminado.</p>
-                <Link to="/orders" className="bg-primary text-background font-bold py-3 px-6 rounded-full hover:bg-primary-focus transition-colors">
-                    Volver a Mis Pedidos
-                </Link>
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
+                <div className="py-20">
+                    <h1 className="text-3xl font-bold mb-4">Pedido no encontrado</h1>
+                    <p className="text-on-surface-secondary mb-8">El pedido que buscas no existe o ha sido eliminado.</p>
+                    <Link to="/orders" className="bg-primary text-slate-900 font-bold py-3 px-6 rounded-full hover:bg-primary-focus transition-colors">
+                        Volver a Mis Pedidos
+                    </Link>
+                </div>
             </div>
         );
     }
@@ -54,18 +56,18 @@ const OrderDetailPage: React.FC = () => {
 
     const getStatusClasses = (status: 'Procesando' | 'Enviado' | 'Entregado' | 'Cancelado') => {
         switch (status) {
-            case 'Procesando': return 'bg-yellow-500/10 text-yellow-400';
-            case 'Enviado': return 'bg-blue-500/10 text-blue-400';
-            case 'Entregado': return 'bg-green-500/10 text-green-400';
-            case 'Cancelado': return 'bg-red-500/10 text-red-400';
-            default: return 'bg-gray-500/10 text-gray-400';
+            case 'Procesando': return 'bg-yellow-100 text-yellow-800';
+            case 'Enviado': return 'bg-blue-100 text-blue-800';
+            case 'Entregado': return 'bg-green-100 text-green-800';
+            case 'Cancelado': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
         }
     };
 
     return (
-        <div>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-6">
-                <Link to="/orders" className="text-sm font-medium text-primary hover:text-primary-focus">
+                <Link to="/orders" className="text-sm font-medium text-primary-focus hover:text-amber-600">
                     &larr; Volver a Mis Pedidos
                 </Link>
             </div>
@@ -76,9 +78,9 @@ const OrderDetailPage: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                    <div className="bg-surface rounded-lg shadow-lg p-6">
+                    <div className="bg-surface rounded-lg shadow-md border border-border-color p-6">
                          <h2 className="text-2xl font-bold mb-4">Artículos del Pedido</h2>
-                        <ul className="divide-y divide-surface-light">
+                        <ul className="divide-y divide-border-color">
                             {order.items.map(item => (
                                 <li key={item.id} className="py-4">
                                     <div className="flex items-center">
@@ -96,7 +98,7 @@ const OrderDetailPage: React.FC = () => {
                                         <div className="mt-3 text-right">
                                         <Link 
                                             to={`/product/${item.id}`}
-                                            className="text-sm font-semibold text-primary hover:text-primary-focus hover:underline"
+                                            className="text-sm font-semibold text-primary-focus hover:text-amber-600 hover:underline"
                                         >
                                             Dejar una opinión
                                         </Link>
@@ -108,7 +110,7 @@ const OrderDetailPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="lg:col-span-1 space-y-8">
-                     <div className="bg-surface rounded-lg shadow-lg p-6">
+                     <div className="bg-surface rounded-lg shadow-md border border-border-color p-6">
                          <h2 className="text-2xl font-bold mb-4">Resumen del Pedido</h2>
                          <div className="space-y-3">
                             <div className="flex justify-between text-on-surface-secondary">
@@ -117,9 +119,9 @@ const OrderDetailPage: React.FC = () => {
                             </div>
                             <div className="flex justify-between text-on-surface-secondary">
                                 <span>Envío</span>
-                                <span className="font-medium text-primary">Gratis</span>
+                                <span className="font-medium text-primary-focus">Gratis</span>
                             </div>
-                            <div className="border-t border-surface-light my-2"></div>
+                            <div className="border-t border-border-color my-2"></div>
                             <div className="flex justify-between text-lg font-bold">
                                 <span>Total del Pedido</span>
                                 <span>${order.total.toFixed(2)}</span>
@@ -141,14 +143,14 @@ const OrderDetailPage: React.FC = () => {
                              <div className="mt-6">
                                  <button
                                      onClick={handleCancelOrder}
-                                     className="w-full bg-red-600/20 text-red-400 font-bold py-2 px-4 rounded-lg hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-red-500 transition-colors"
+                                     className="w-full bg-red-100 text-red-700 font-bold py-2 px-4 rounded-lg hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-red-500 transition-colors"
                                  >
                                      Cancelar Pedido
                                  </button>
                              </div>
                          )}
                      </div>
-                     <div className="bg-surface rounded-lg shadow-lg p-6">
+                     <div className="bg-surface rounded-lg shadow-md border border-border-color p-6">
                         <h2 className="text-2xl font-bold mb-4">Información de Envío</h2>
                         <div className="space-y-1 text-on-surface-secondary">
                             <p className="font-semibold text-on-surface">{`${shippingInfo.firstName} ${shippingInfo.paternalLastName}`}</p>
