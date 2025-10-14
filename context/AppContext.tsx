@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, CartItem, User, Order, Message, Review } from '../types';
-import { api } from '../services/api';
+import { mockApi } from '../services/mockApi';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -77,25 +77,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCart(JSON.parse(storedCart));
         }
 
-        const products = await api.getProducts();
+        const products = await mockApi.getProducts();
         setAllProducts(products);
       } catch (e: any) {
-        // If API fails (e.g., backend not running), fall back to mock data
-        console.warn(
-            "--- MODO DE DATOS SIMULADOS ---\n" +
-            "No se pudo conectar a la API del backend. Esto es común durante el desarrollo si el servidor backend no está en ejecución.\n" +
-            "Usando datos simulados de 'services/mockApi.ts' como alternativa.\n" +
-            "Para conectarse al backend real, asegúrese de que se esté ejecutando en http://localhost:4000.\n" +
-            "Error original:", e
-        );
-        try {
-            const { mockApi } = await import('../services/mockApi');
-            const mockProducts = await mockApi.getProducts();
-            setAllProducts(mockProducts);
-        } catch (mockError: any) {
-            console.error("Crítico: Fallo al cargar los productos simulados como alternativa:", mockError);
-            setError(`Error al cargar productos: ${mockError.message}`);
-        }
+         const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+         console.error("Fallo al cargar los datos simulados iniciales:", message);
+         setError(`Error al cargar productos: ${message}`);
       } finally {
         setLoading(false);
       }
@@ -112,17 +99,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           if (user.role === 'admin') {
             const [fetchedCustomers, fetchedOrders, fetchedMessages] = await Promise.all([
-              api.getCustomers(),
-              api.getAllOrders(),
-              api.getMessages(),
+              mockApi.getCustomers(),
+              mockApi.getAllOrders(),
+              mockApi.getMessages(user.id),
             ]);
             setCustomers(fetchedCustomers);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
           } else {
             const [fetchedOrders, fetchedMessages] = await Promise.all([
-               api.getMyOrders(),
-               api.getMessages()
+               mockApi.getMyOrders(user.id),
+               mockApi.getMessages(user.id)
             ]);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
@@ -155,15 +142,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const login = async (email: string, password: string): Promise<User | null> => {
     setError(null);
     try {
-      const data = await api.login(email, password);
+      const data = await mockApi.login(email, password);
       if (data && data.token) {
-        const { token, ...loggedInUser } = data;
+        const { user: loggedInUser, token } = data;
         setUser(loggedInUser);
         setToken(token);
         localStorage.setItem('user', JSON.stringify(loggedInUser));
         localStorage.setItem('token', token);
         return loggedInUser;
       }
+      setError('Credenciales incorrectas.');
       return null;
     } catch (e: any) {
       setError(e.message);
@@ -174,15 +162,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const register = async (userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<User | null> => {
     setError(null);
     try {
-      const data = await api.register(userData);
+      const data = await mockApi.register(userData);
        if (data && data.token) {
-        const { token, ...newUser } = data;
+        const { user: newUser, token } = data;
         setUser(newUser);
         setToken(token);
         localStorage.setItem('user', JSON.stringify(newUser));
         localStorage.setItem('token', token);
         return newUser;
        }
+       setError('El correo electrónico ya está en uso.');
        return null;
     } catch (e: any) {
       setError(e.message);
@@ -201,9 +190,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const updateProfile = async (profileData: Partial<Omit<User, 'id' | 'role' | 'email'>>): Promise<User | null> => {
+    if (!user) return null;
     setError(null);
     try {
-      const updatedUser = await api.updateProfile(profileData);
+      const updatedUser = await mockApi.updateProfile(user.id, profileData);
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       return updatedUser;
@@ -214,9 +204,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
     
   const changePassword = async (passwordData: { current: string, new: string }): Promise<boolean> => {
+      if (!user) return false;
       setError(null);
       try {
-          await api.changePassword(passwordData.current, passwordData.new);
+          await mockApi.changePassword(user.id, passwordData.current, passwordData.new);
           return true;
       } catch (e: any) {
           setError(e.message);
@@ -271,18 +262,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user || cart.length === 0) return false;
     setError(null);
     try {
-        const newOrder = await api.placeOrder(cart, user, cartTotal);
+        const newOrder = await mockApi.placeOrder(user.id, cart, user, cartTotal);
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
-            api.getProducts().then(setAllProducts);
+            mockApi.getProducts().then(setAllProducts);
             return true;
         }
         return false;
     } catch (e: any) {
         setError(e.message)
         alert(`Error al realizar el pedido: ${e.message}`);
-        api.getProducts().then(setAllProducts);
+        mockApi.getProducts().then(setAllProducts);
         return false;
     }
   };
@@ -291,7 +282,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-        return await api.getOrderDetail(orderId);
+        return await mockApi.getOrderDetail(orderId, user.id, user.role);
     } catch (e: any) {
         setError(e.message);
         return null;
@@ -302,9 +293,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await api.cancelOrder(orderId);
+        await mockApi.cancelOrder(orderId, user.id);
         setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
-        api.getProducts().then(setAllProducts);
+        mockApi.getProducts().then(setAllProducts);
     } catch (e: any) {
         setError(e.message);
     }
@@ -313,7 +304,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     setError(null);
     try {
-        await api.updateOrderStatus(orderId, status);
+        await mockApi.updateOrderStatus(orderId, status);
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: status } : o));
     } catch (e: any) {
         setError(e.message);
@@ -323,7 +314,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = async (productData: Omit<Product, 'id'>) => {
     setError(null);
     try {
-        const newProduct = await api.addProduct(productData);
+        const newProduct = await mockApi.addProduct(productData);
         setAllProducts(prev => [newProduct, ...prev]);
     } catch (e: any) {
         setError(e.message);
@@ -333,7 +324,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateProduct = async (updatedProduct: Product) => {
     setError(null);
     try {
-        const result = await api.updateProduct(updatedProduct);
+        const result = await mockApi.updateProduct(updatedProduct);
         if(result){
             if (result.isArchived) {
                 setAllProducts(prev => prev.filter(p => p.id !== result.id));
@@ -349,7 +340,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteProduct = useCallback(async (productId: string) => {
     setError(null);
     try {
-      await api.deleteProduct(productId);
+      await mockApi.deleteProduct(productId);
       setAllProducts(prev => prev.filter(p => p.id !== productId));
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
@@ -361,7 +352,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteCustomer = async (customerId: string) => {
     setError(null);
     try {
-        await api.deleteCustomer(customerId);
+        await mockApi.deleteCustomer(customerId);
         setCustomers(prev => prev.filter(c => c.id !== customerId));
     } catch (e: any) {
         setError(e.message);
@@ -372,7 +363,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        const newMessage = await api.sendMessage(text, toId, user.id);
+        const newMessage = await mockApi.sendMessage(text, user.id, toId);
         setMessages(prev => [...prev, newMessage]);
     } catch (e: any) {
         setError(e.message);
@@ -383,7 +374,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await api.markMessagesAsRead(fromId);
+        await mockApi.markMessagesAsRead(user.id, fromId);
         setMessages(prev => prev.map(msg => (msg.toId === user?.id && msg.fromId === fromId && !msg.read) ? { ...msg, read: true } : msg));
     } catch (e: any) {
         setError(e.message);
@@ -398,7 +389,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getReviewsForProduct = useCallback(async (productId: string): Promise<Review[]> => {
       setError(null);
       try {
-          return await api.getReviewsForProduct(productId);
+          return await mockApi.getReviewsForProduct(productId);
       } catch (e: any) {
           setError(e.message);
           return [];
@@ -411,10 +402,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setError(null);
     try {
-        await api.addProductReview(productId, rating, comment);
+        await mockApi.addProductReview(productId, user.id, `${user.firstName} ${user.paternalLastName}`, rating, comment);
         
         // Refetch all products to get updated ratings for product list pages
-        const updatedProducts = await api.getProducts();
+        const updatedProducts = await mockApi.getProducts();
         setAllProducts(updatedProducts);
         return { success: true };
     } catch (e: any) {

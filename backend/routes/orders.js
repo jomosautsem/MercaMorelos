@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db').getClient;
+const db = require('../db');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 // @route   POST /api/orders
@@ -8,7 +8,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 // @access  Private
 router.post('/', protect, async (req, res) => {
     const { cartItems, shippingInfo, total } = req.body;
-    const client = await pool();
+    const client = await db.getClient();
 
     try {
         await client.query('BEGIN');
@@ -110,7 +110,6 @@ router.post('/', protect, async (req, res) => {
 // @access  Private
 router.get('/myorders', protect, async (req, res) => {
     try {
-        const db = require('../db');
         const ordersResult = await db.query(
             `SELECT o.id, o.date, o."estimatedDeliveryDate", o.total, o.status, o."shippingInfo"
              FROM orders o
@@ -152,7 +151,7 @@ router.get('/myorders', protect, async (req, res) => {
 // @access  Private
 router.get('/:id', protect, async (req, res) => {
     try {
-        const orderResult = await require('../db').query(
+        const orderResult = await db.query(
            `SELECT json_build_object(
                 'id', o.id,
                 'date', o.date,
@@ -189,7 +188,8 @@ router.get('/:id', protect, async (req, res) => {
         
         // Basic authorization: check if user is admin or the order owner
         const orderData = orderResult.rows[0].order;
-        const orderOwnerId = (await require('../db').query('SELECT "userId" from orders WHERE id = $1', [req.params.id])).rows[0].userId;
+        const orderOwnerResult = await db.query('SELECT "userId" from orders WHERE id = $1', [req.params.id]);
+        const orderOwnerId = orderOwnerResult.rows[0].userId;
 
         if (req.user.role !== 'admin' && orderOwnerId !== req.user.id) {
             return res.status(401).json({ msg: 'Not authorized to view this order' });
@@ -209,7 +209,7 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private/Admin
 router.get('/', protect, admin, async (req, res) => {
     try {
-        const ordersResult = await require('../db').query(
+        const ordersResult = await db.query(
            `SELECT o.id, o.date, o.total, o.status, 
                    u."firstName", u."paternalLastName"
             FROM orders o
@@ -241,7 +241,7 @@ router.get('/', protect, admin, async (req, res) => {
 router.put('/:id/status', protect, admin, async (req, res) => {
     try {
         const { status } = req.body;
-        const updatedOrder = await require('../db').query(
+        const updatedOrder = await db.query(
             'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
             [status, req.params.id]
         );
@@ -261,7 +261,7 @@ router.put('/:id/status', protect, admin, async (req, res) => {
 // @desc    Cancel an order by a user
 // @access  Private
 router.put('/:id/cancel', protect, async (req, res) => {
-    const client = await pool();
+    const client = await db.getClient();
     try {
         await client.query('BEGIN');
         

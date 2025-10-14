@@ -7,12 +7,5 @@ export default defineConfig({
   server: {
     // This allows the server to be accessible on the local network
     host: true, 
-    proxy: {
-      // Proxy requests from /api to the backend server
-      '/api': {
-        target: 'http://localhost:4000', // Your backend server address
-        changeOrigin: true, // Recommended for virtual hosted sites
-      },
-    },
   },
 });

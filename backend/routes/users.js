@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const db = require('../db');
 const bcrypt = require('bcryptjs');
 const { protect, admin } = require('../middleware/authMiddleware');
 
@@ -9,7 +9,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 // @access  Private/Admin
 router.get('/', protect, admin, async (req, res) => {
     try {
-        const users = await pool.query(
+        const users = await db.query(
             'SELECT id, "firstName", "paternalLastName", email, address FROM users WHERE role = $1 ORDER BY "createdAt" DESC',
             ['customer']
         );
@@ -26,7 +26,7 @@ router.get('/', protect, admin, async (req, res) => {
 router.put('/profile', protect, async (req, res) => {
     const { firstName, paternalLastName, maternalLastName, address } = req.body;
     try {
-        const updatedUser = await pool.query(
+        const updatedUser = await db.query(
             'UPDATE users SET "firstName" = $1, "paternalLastName" = $2, "maternalLastName" = $3, address = $4 WHERE id = $5 RETURNING id, "firstName", "paternalLastName", "maternalLastName", email, address, role',
             [firstName, paternalLastName, maternalLastName, address, req.user.id]
         );
@@ -46,7 +46,7 @@ router.put('/profile', protect, async (req, res) => {
 router.put('/password', protect, async (req, res) => {
     const { currentPassword, newPassword } = req.body;
     try {
-        const userResult = await pool.query('SELECT password FROM users WHERE id = $1', [req.user.id]);
+        const userResult = await db.query('SELECT password FROM users WHERE id = $1', [req.user.id]);
         const user = userResult.rows[0];
 
         if (!user) {
@@ -66,7 +66,7 @@ router.put('/password', protect, async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, req.user.id]);
+        await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, req.user.id]);
 
         res.json({ message: 'Password updated successfully' });
 
@@ -82,7 +82,7 @@ router.put('/password', protect, async (req, res) => {
 // @access  Private/Admin
 router.delete('/:id', protect, admin, async (req, res) => {
     try {
-        const deleteOp = await pool.query('DELETE FROM users WHERE id = $1 AND role = $2', [req.params.id, 'customer']);
+        const deleteOp = await db.query('DELETE FROM users WHERE id = $1 AND role = $2', [req.params.id, 'customer']);
         if (deleteOp.rowCount === 0) {
             return res.status(404).json({ msg: 'Customer not found' });
         }

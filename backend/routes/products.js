@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const getClient = require('../db').getClient;
+const db = require('../db');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 // @route   GET /api/products
@@ -8,9 +8,8 @@ const { protect, admin } = require('../middleware/authMiddleware');
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    const pool = require('../db');
     // Join with reviews to calculate average rating and review count
-    const products = await pool.query(`
+    const products = await db.query(`
       SELECT 
         p.*, 
         COALESCE(r.avg_rating, 0) as "averageRating", 
@@ -39,8 +38,7 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
     try {
-        const pool = require('../db');
-        const product = await pool.query('SELECT * FROM products WHERE id = $1 AND "isArchived" = false', [req.params.id]);
+        const product = await db.query('SELECT * FROM products WHERE id = $1 AND "isArchived" = false', [req.params.id]);
         if (product.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });
         }
@@ -57,10 +55,9 @@ router.get('/:id', async (req, res) => {
 router.post('/', protect, admin, async (req, res) => {
     const { name, price, imageUrl, category, description, stock } = req.body;
     try {
-        const pool = require('../db');
         const numericStock = Number(stock) || 0;
         const isArchived = numericStock <= 0;
-        const newProduct = await pool.query(
+        const newProduct = await db.query(
             'INSERT INTO products (name, price, "imageUrl", category, description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
             [name, price, imageUrl, category, description, numericStock, isArchived]
         );
@@ -77,11 +74,10 @@ router.post('/', protect, admin, async (req, res) => {
 router.put('/:id', protect, admin, async (req, res) => {
     const { name, price, imageUrl, category, description, stock } = req.body;
     try {
-        const pool = require('../db');
         const numericStock = Number(stock) || 0;
         const isArchived = numericStock <= 0;
 
-        const updatedProduct = await pool.query(
+        const updatedProduct = await db.query(
             'UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, description = $5, stock = $6, "isArchived" = $7 WHERE id = $8 RETURNING *',
             [name, price, imageUrl, category, description, numericStock, isArchived, req.params.id]
         );
@@ -99,7 +95,7 @@ router.put('/:id', protect, admin, async (req, res) => {
 // @desc    Archive a product if it's in orders, otherwise delete it.
 // @access  Private/Admin
 router.delete('/:id', protect, admin, async (req, res) => {
-    const client = await getClient();
+    const client = await db.getClient();
     try {
         await client.query('BEGIN');
         const orderItemsResult = await client.query(
@@ -149,8 +145,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
 // @access  Public
 router.get('/:id/reviews', async (req, res) => {
     try {
-        const pool = require('../db');
-        const reviews = await pool.query(
+        const reviews = await db.query(
             `SELECT r.id, r."productId", r."userId", r.rating, r.comment, r."createdAt" as date, 
                     u."firstName", u."paternalLastName" 
              FROM reviews r
@@ -181,9 +176,8 @@ router.post('/:id/reviews', protect, async (req, res) => {
     const userId = req.user.id;
 
     try {
-        const pool = require('../db');
         // 1. Verify the user has purchased and received this product
-        const purchaseResult = await pool.query(
+        const purchaseResult = await db.query(
             `SELECT 1 FROM orders o
              JOIN order_items oi ON o.id = oi."orderId"
              WHERE o."userId" = $1 AND oi."productId" = $2 AND o.status = 'Entregado'
@@ -196,7 +190,7 @@ router.post('/:id/reviews', protect, async (req, res) => {
         }
         
         // 2. Insert the review (or update if it exists, due to UNIQUE constraint)
-        const newReview = await pool.query(
+        const newReview = await db.query(
             `INSERT INTO reviews ("productId", "userId", rating, comment)
              VALUES ($1, $2, $3, $4)
              ON CONFLICT ("productId", "userId") DO UPDATE

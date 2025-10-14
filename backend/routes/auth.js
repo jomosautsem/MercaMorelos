@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const pool = require('../db');
+const db = require('../db');
 const router = express.Router();
 
 const generateToken = (id) => {
@@ -17,7 +17,7 @@ router.post('/register', async (req, res) => {
   const { firstName, paternalLastName, maternalLastName, email, address, password } = req.body;
 
   try {
-    const userExists = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    const userExists = await db.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     if (userExists.rows.length > 0) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -28,7 +28,7 @@ router.post('/register', async (req, res) => {
     // Check if registering admin
     const role = email.toLowerCase() === 'jomosanano@gmail.com' ? 'admin' : 'customer';
 
-    const newUser = await pool.query(
+    const newUser = await db.query(
       'INSERT INTO users ("firstName", "paternalLastName", "maternalLastName", email, address, password, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, "firstName", "paternalLastName", "maternalLastName", email, address, role',
       [firstName, paternalLastName, maternalLastName, email, address, hashedPassword, role]
     );
@@ -52,7 +52,7 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const result = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    const result = await db.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     const user = result.rows[0];
 
     if (user && (await bcrypt.compare(password, user.password))) {

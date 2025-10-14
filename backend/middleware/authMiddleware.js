@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const pool = require('../db');
+const db = require('../db');
 
 const protect = async (req, res, next) => {
     let token;
@@ -13,7 +13,7 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
             // Get user from the token (don't include password)
-            const result = await pool.query('SELECT id, "firstName", "paternalLastName", "maternalLastName", email, address, role FROM users WHERE id = $1', [decoded.id]);
+            const result = await db.query('SELECT id, "firstName", "paternalLastName", "maternalLastName", email, address, role FROM users WHERE id = $1', [decoded.id]);
             req.user = result.rows[0];
 
             if (!req.user) {

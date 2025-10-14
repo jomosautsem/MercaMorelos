@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
+const db = require('../db');
 const { protect } = require('../middleware/authMiddleware');
 
 // @route   GET /api/messages
@@ -8,7 +8,7 @@ const { protect } = require('../middleware/authMiddleware');
 // @access  Private
 router.get('/', protect, async (req, res) => {
     try {
-        const messages = await pool.query(
+        const messages = await db.query(
             'SELECT m.id, u_from.role as from, m."fromId", m."toId", m.text, m.timestamp, m.read FROM messages m JOIN users u_from ON m."fromId" = u_from.id WHERE m."fromId" = $1 OR m."toId" = $1 ORDER BY m.timestamp ASC',
             [req.user.id]
         );
@@ -31,7 +31,7 @@ router.post('/', protect, async (req, res) => {
         // find the actual admin ID in the database and use it as the recipient.
         // This ensures messages from customers are correctly routed to the admin.
         if (fromUser.role === 'customer' && toId === 'admin-user') {
-            const adminResult = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+            const adminResult = await db.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
             if (adminResult.rows.length > 0) {
                 toId = adminResult.rows[0].id;
             } else {
@@ -39,12 +39,12 @@ router.post('/', protect, async (req, res) => {
             }
         }
 
-        const newMessage = await pool.query(
+        const newMessage = await db.query(
             'INSERT INTO messages ("fromId", "toId", text) VALUES ($1, $2, $3) RETURNING *',
             [fromUser.id, toId, text]
         );
         
-        const result = await pool.query('SELECT m.id, u_from.role as from, m."fromId", m."toId", m.text, m.timestamp, m.read FROM messages m JOIN users u_from ON m."fromId" = u_from.id WHERE m.id = $1', [newMessage.rows[0].id]);
+        const result = await db.query('SELECT m.id, u_from.role as from, m."fromId", m."toId", m.text, m.timestamp, m.read FROM messages m JOIN users u_from ON m."fromId" = u_from.id WHERE m.id = $1', [newMessage.rows[0].id]);
 
         res.status(201).json(result.rows[0]);
     } catch (err) {
@@ -62,7 +62,7 @@ router.put('/read', protect, async (req, res) => {
         // FIX: Resolve the actual admin ID if the generic 'admin-user' is passed.
         // This ensures messages from the admin can be correctly marked as read by customers.
         if (fromId === 'admin-user') {
-            const adminResult = await pool.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
+            const adminResult = await db.query("SELECT id FROM users WHERE role = 'admin' LIMIT 1");
             if (adminResult.rows.length > 0) {
                 fromId = adminResult.rows[0].id;
             } else {
@@ -70,7 +70,7 @@ router.put('/read', protect, async (req, res) => {
             }
         }
 
-        await pool.query(
+        await db.query(
             'UPDATE messages SET read = true WHERE "toId" = $1 AND "fromId" = $2',
             [req.user.id, fromId]
         );
