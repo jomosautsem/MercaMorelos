@@ -94,7 +94,7 @@ const AdminArchivedProductsPage: React.FC = () => {
 
             {productToRestore && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 transition-opacity duration-300" aria-modal="true" role="dialog">
-                    <div className="bg-surface p-8 rounded-lg shadow-2xl max-w-md w-full transform transition-all duration-300 scale-95 opacity-0 animate-fade-in-scale">
+                    <div className="bg-surface p-8 rounded-lg shadow-2xl max-w-md w-full transform transition-all duration-300">
                         <h2 className="text-2xl font-bold mb-4 text-on-surface">Restaurar Producto</h2>
                         <p className="mb-6 text-on-surface-secondary">Vas a restaurar el producto: <strong className="text-primary">{productToRestore.name}</strong>. Al añadir stock, volverá a estar visible en la tienda.</p>
                         <form onSubmit={handleRestoreSubmit}>
