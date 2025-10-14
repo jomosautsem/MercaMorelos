@@ -55,7 +55,15 @@ export const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const storedCart = localStorage.getItem('cart');
+      return storedCart ? JSON.parse(storedCart) : [];
+    } catch (error) {
+      console.error("Failed to parse cart from localStorage:", error);
+      return [];
+    }
+  });
   const [orders, setOrders] = useState<Order[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [archivedProducts, setArchivedProducts] = useState<Product[]>([]);
@@ -96,11 +104,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setUser(JSON.parse(storedUser));
           setToken(storedToken);
         }
-
-        const storedCart = localStorage.getItem('cart');
-        if (storedCart) {
-          setCart(JSON.parse(storedCart));
-        }
+        
+        // Cart is now loaded synchronously in useState initializer to prevent race conditions
 
         const products = await api.getProducts();
         setAllProducts(products);
