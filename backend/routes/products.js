@@ -33,12 +33,26 @@ router.get('/', async (req, res) => {
   }
 });
 
+// @route   GET /api/products/archived
+// @desc    Fetch all archived products
+// @access  Private/Admin
+router.get('/archived', protect, admin, async (req, res) => {
+  try {
+    const products = await db.query('SELECT * FROM products WHERE "isArchived" = true ORDER BY "createdAt" DESC');
+    res.json(products.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+
 // @route   GET /api/products/:id
 // @desc    Fetch a single product
 // @access  Public
 router.get('/:id', async (req, res) => {
     try {
-        const product = await db.query('SELECT * FROM products WHERE id = $1 AND "isArchived" = false', [req.params.id]);
+        const product = await db.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
         if (product.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });
         }

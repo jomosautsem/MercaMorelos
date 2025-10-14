@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Product, CartItem, User, Order, Message, Review } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -80,11 +80,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCart(JSON.parse(storedCart));
         }
 
-        const products = await mockApi.getProducts();
+        const products = await api.getProducts();
         setAllProducts(products);
       } catch (e: any) {
          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-         console.error("Fallo al cargar los datos simulados iniciales:", message);
+         console.error("Fallo al cargar los datos iniciales desde la API:", message);
          setError(`Error al cargar productos: ${message}`);
       } finally {
         setLoading(false);
@@ -102,10 +102,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           if (user.role === 'admin') {
             const [fetchedCustomers, fetchedOrders, fetchedMessages, fetchedArchivedProducts] = await Promise.all([
-              mockApi.getCustomers(),
-              mockApi.getAllOrders(),
-              mockApi.getMessages(user.id),
-              mockApi.getArchivedProducts(),
+              api.getCustomers(),
+              api.getAllOrders(),
+              api.getMessages(),
+              api.getArchivedProducts(),
             ]);
             setCustomers(fetchedCustomers);
             setOrders(fetchedOrders);
@@ -113,8 +113,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setArchivedProducts(fetchedArchivedProducts);
           } else {
             const [fetchedOrders, fetchedMessages] = await Promise.all([
-               mockApi.getMyOrders(user.id),
-               mockApi.getMessages(user.id)
+               api.getMyOrders(),
+               api.getMessages()
             ]);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
@@ -147,8 +147,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const login = async (email: string, password: string): Promise<User | null> => {
     setError(null);
     try {
-      const data = await mockApi.login(email, password);
-      if (data && data.token) {
+      const data = await api.login(email, password);
+      // FIX: The API client wraps the response in a `user` object. Destructure it correctly.
+      if (data && data.user && data.token) {
         const { user: loggedInUser, token } = data;
         setUser(loggedInUser);
         setToken(token);
@@ -167,8 +168,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const register = async (userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<User | null> => {
     setError(null);
     try {
-      const data = await mockApi.register(userData);
-       if (data && data.token) {
+      const data = await api.register(userData);
+      // FIX: The API client wraps the response in a `user` object. Destructure it correctly.
+       if (data && data.user && data.token) {
         const { user: newUser, token } = data;
         setUser(newUser);
         setToken(token);
@@ -199,7 +201,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-      const updatedUser = await mockApi.updateProfile(user.id, profileData);
+      const updatedUser = await api.updateProfile(profileData);
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       return updatedUser;
@@ -213,7 +215,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!user) return false;
       setError(null);
       try {
-          await mockApi.changePassword(user.id, passwordData.current, passwordData.new);
+          await api.changePassword(passwordData.current, passwordData.new);
           return true;
       } catch (e: any) {
           setError(e.message);
@@ -267,8 +269,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const refetchProducts = useCallback(async () => {
         try {
             const [products, archived] = await Promise.all([
-                mockApi.getProducts(),
-                user?.role === 'admin' ? mockApi.getArchivedProducts() : Promise.resolve([]),
+                api.getProducts(),
+                user?.role === 'admin' ? api.getArchivedProducts() : Promise.resolve([]),
             ]);
             setAllProducts(products);
             if (user?.role === 'admin') {
@@ -284,7 +286,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user || cart.length === 0) return false;
     setError(null);
     try {
-        const newOrder = await mockApi.placeOrder(user.id, cart, user, cartTotal);
+        const newOrder = await api.placeOrder(cart, user, cartTotal);
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
@@ -304,7 +306,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-        return await mockApi.getOrderDetail(orderId, user.id, user.role);
+        return await api.getOrderDetail(orderId);
     } catch (e: any) {
         setError(e.message);
         return null;
@@ -315,7 +317,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await mockApi.cancelOrder(orderId, user.id);
+        await api.cancelOrder(orderId);
         setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
         await refetchProducts();
     } catch (e: any) {
@@ -326,7 +328,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateOrderStatus = async (orderId: string, status: Order['status']) => {
     setError(null);
     try {
-        await mockApi.updateOrderStatus(orderId, status);
+        await api.updateOrderStatus(orderId, status);
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: status } : o));
     } catch (e: any) {
         setError(e.message);
@@ -336,7 +338,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = async (productData: Omit<Product, 'id'>) => {
     setError(null);
     try {
-        await mockApi.addProduct(productData);
+        await api.addProduct(productData);
         await refetchProducts();
     } catch (e: any) {
         setError(e.message);
@@ -346,7 +348,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateProduct = async (updatedProduct: Product) => {
     setError(null);
     try {
-        await mockApi.updateProduct(updatedProduct);
+        await api.updateProduct(updatedProduct);
         await refetchProducts();
     } catch (e: any) {
         setError(e.message);
@@ -356,7 +358,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const archiveProduct = useCallback(async (productId: string) => {
     setError(null);
     try {
-      await mockApi.archiveProduct(productId);
+      await api.deleteProduct(productId);
       await refetchProducts();
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
@@ -368,7 +370,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteProductPermanently = useCallback(async (productId: string) => {
     setError(null);
     try {
-      await mockApi.deleteProductPermanently(productId);
+      await api.deleteProduct(productId);
       await refetchProducts();
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
@@ -380,7 +382,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteCustomer = async (customerId: string) => {
     setError(null);
     try {
-        await mockApi.deleteCustomer(customerId);
+        await api.deleteCustomer(customerId);
         setCustomers(prev => prev.filter(c => c.id !== customerId));
     } catch (e: any) {
         setError(e.message);
@@ -391,7 +393,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        const newMessage = await mockApi.sendMessage(text, user.id, toId);
+        const newMessage = await api.sendMessage(text, toId);
         setMessages(prev => [...prev, newMessage]);
     } catch (e: any) {
         setError(e.message);
@@ -402,7 +404,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await mockApi.markMessagesAsRead(user.id, fromId);
+        await api.markMessagesAsRead(fromId);
         setMessages(prev => prev.map(msg => (msg.toId === user?.id && msg.fromId === fromId && !msg.read) ? { ...msg, read: true } : msg));
     } catch (e: any) {
         setError(e.message);
@@ -417,7 +419,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const getReviewsForProduct = useCallback(async (productId: string): Promise<Review[]> => {
       setError(null);
       try {
-          return await mockApi.getReviewsForProduct(productId);
+          return await api.getReviewsForProduct(productId);
       } catch (e: any) {
           setError(e.message);
           return [];
@@ -430,7 +432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setError(null);
     try {
-        await mockApi.addProductReview(productId, user.id, `${user.firstName} ${user.paternalLastName}`, rating, comment);
+        await api.addProductReview(productId, rating, comment);
         await refetchProducts(); // Refetch all products to get updated ratings
         return { success: true };
     } catch (e: any) {
@@ -443,7 +445,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const checkIfUserPurchasedProduct = useCallback((productId: string): boolean => {
       if (!user) return false;
       return orders.some(order => 
-          order.status === 'Entregado' && order.items.some(item => item.id === productId)
+          order.status === 'Entregado' && order.items.some(item => String(item.id) === String(productId))
       );
   }, [user, orders]);
 

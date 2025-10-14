@@ -16,13 +16,8 @@ const getAuthHeaders = () => {
 };
 
 const handleResponse = async (response: Response) => {
-    // The body can only be consumed once, so we read it as text first.
     const text = await response.text();
-
     if (!response.ok) {
-        // If the response is not OK, it's an error.
-        // We try to parse the text as JSON to get a structured error message.
-        // If parsing fails, we throw the raw text as the error.
         try {
             const json = JSON.parse(text);
             throw new Error(json.message || text);
@@ -30,15 +25,8 @@ const handleResponse = async (response: Response) => {
             throw new Error(text || `Request failed with status ${response.status}`);
         }
     }
-
-    // If the response is OK, parse the text as JSON.
-    // This also handles successful but empty responses (e.g., 204 No Content),
-    // which will result in an empty object.
     return text ? JSON.parse(text) : {};
 };
-
-
-// --- Data Normalization Helpers ---
 
 const normalizeProduct = (product: any): Product => {
     if (!product) return product;
@@ -68,25 +56,34 @@ const normalizeReview = (review: any): Review => {
 
 export const api = {
     // AUTH
-    async login(email: string, password: string): Promise<User & { token: string }> {
+    async login(email: string, password: string): Promise<{user: User, token: string}> {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
         });
-        return handleResponse(response);
+        const data = await handleResponse(response);
+        const { token, ...user } = data;
+        return { user, token };
     },
-    async register(userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<User & { token: string }> {
+    async register(userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<{user: User, token: string}> {
          const response = await fetch(`${API_BASE_URL}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(userData),
         });
-        return handleResponse(response);
+        const data = await handleResponse(response);
+        const { token, ...user } = data;
+        return { user, token };
     },
     // PRODUCTS
     async getProducts(): Promise<Product[]> {
         const response = await fetch(`${API_BASE_URL}/products`);
+        const products = await handleResponse(response);
+        return products.map(normalizeProduct);
+    },
+    async getArchivedProducts(): Promise<Product[]> {
+        const response = await fetch(`${API_BASE_URL}/products/archived`, { headers: getAuthHeaders() });
         const products = await handleResponse(response);
         return products.map(normalizeProduct);
     },
@@ -195,12 +192,10 @@ export const api = {
         const response = await fetch(`${API_BASE_URL}/messages`, { headers: getAuthHeaders() });
         return handleResponse(response);
     },
-    async sendMessage(text: string, toId: string, fromId: string): Promise<Message> {
+    async sendMessage(text: string, toId: string): Promise<Message> {
         const response = await fetch(`${API_BASE_URL}/messages`, {
             method: 'POST',
             headers: getAuthHeaders(),
-            // NOTE: fromId is not sent in the body. The backend identifies the user from the token.
-            // The fromId parameter is included here to maintain a consistent interface with mockApi.
             body: JSON.stringify({ text, toId }),
         });
         return handleResponse(response);
