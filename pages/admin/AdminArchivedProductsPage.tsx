@@ -1,0 +1,69 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAppContext } from '../../context/AppContext';
+
+const AdminArchivedProductsPage: React.FC = () => {
+    const { archivedProducts, deleteProductPermanently } = useAppContext();
+
+    const handleDelete = (productId: string, productName: string) => {
+        const confirmationMessage = `¡ACCIÓN IRREVERSIBLE!\n\n¿Estás seguro de que quieres eliminar PERMANENTEMENTE el producto "${productName}"? Esta acción no se puede deshacer.\n\nEl producto será eliminado de la tienda y del catálogo, pero permanecerá en el historial de pedidos existentes para mantener la integridad de los registros.`;
+        if (window.confirm(confirmationMessage)) {
+            deleteProductPermanently(productId);
+        }
+    };
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h1 className="text-3xl font-bold tracking-tight">Productos Archivados</h1>
+                 <Link
+                    to="/admin/products"
+                    className="text-sm font-semibold text-primary hover:underline"
+                >
+                    &larr; Volver a Productos Activos
+                </Link>
+            </div>
+            {archivedProducts.length > 0 ? (
+                <div className="bg-surface-light rounded-lg shadow-md overflow-x-auto">
+                    <table className="w-full text-sm text-left text-on-surface-secondary">
+                        <thead className="text-xs text-on-surface-secondary uppercase bg-surface">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Imagen</th>
+                                <th scope="col" className="px-6 py-3">Nombre</th>
+                                <th scope="col" className="px-6 py-3">Precio</th>
+                                <th scope="col" className="px-6 py-3">Stock</th>
+                                <th scope="col" className="px-6 py-3">Categoría</th>
+                                <th scope="col" className="px-6 py-3">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {archivedProducts.map(product => (
+                                <tr key={product.id} className="border-b border-surface hover:bg-surface">
+                                    <td className="px-6 py-4">
+                                        <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded"/>
+                                    </td>
+                                    <th scope="row" className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
+                                        {product.name}
+                                    </th>
+                                    <td className="px-6 py-4">${product.price.toFixed(2)}</td>
+                                    <td className="px-6 py-4 font-bold text-red-500">{product.stock}</td>
+                                    <td className="px-6 py-4 capitalize">{product.category}</td>
+                                    <td className="px-6 py-4 flex items-center space-x-3">
+                                        <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-primary hover:underline">Restaurar</Link>
+                                        <button onClick={() => handleDelete(product.id, product.name)} className="font-medium text-red-600 hover:underline">Eliminar</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            ) : (
+                 <div className="text-center py-16 bg-surface-light rounded-lg">
+                    <p className="text-lg text-on-surface-secondary">No hay productos archivados.</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default AdminArchivedProductsPage;

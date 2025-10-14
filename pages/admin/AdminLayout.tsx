@@ -23,6 +23,9 @@ const AdminLayout: React.FC = () => {
           <NavLink to="/admin/customers" className={navLinkClasses}>
             Clientes
           </NavLink>
+           <NavLink to="/admin/products/archived" className={navLinkClasses}>
+            Archivados
+          </NavLink>
         </nav>
       </aside>
       <main className="flex-1 bg-surface p-6 rounded-lg shadow-lg">

@@ -29,6 +29,7 @@ interface AppContextType {
   cancelOrder: (orderId: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   allProducts: Product[];
+  archivedProducts: Product[];
   customers: User[];
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
@@ -54,6 +55,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [archivedProducts, setArchivedProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,14 +101,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setError(null);
         try {
           if (user.role === 'admin') {
-            const [fetchedCustomers, fetchedOrders, fetchedMessages] = await Promise.all([
+            const [fetchedCustomers, fetchedOrders, fetchedMessages, fetchedArchivedProducts] = await Promise.all([
               mockApi.getCustomers(),
               mockApi.getAllOrders(),
               mockApi.getMessages(user.id),
+              mockApi.getArchivedProducts(),
             ]);
             setCustomers(fetchedCustomers);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
+            setArchivedProducts(fetchedArchivedProducts);
           } else {
             const [fetchedOrders, fetchedMessages] = await Promise.all([
                mockApi.getMyOrders(user.id),
@@ -186,6 +190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setOrders([]);
     setMessages([]);
     setCustomers([]);
+    setArchivedProducts([]);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
   }, []);
@@ -259,6 +264,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const cartCount = useMemo(() => cart.reduce((count, item) => count + item.quantity, 0), [cart]);
   const cartTotal = useMemo(() => cart.reduce((total, item) => total + item.price * item.quantity, 0), [cart]);
 
+    const refetchProducts = useCallback(async () => {
+        try {
+            const [products, archived] = await Promise.all([
+                mockApi.getProducts(),
+                user?.role === 'admin' ? mockApi.getArchivedProducts() : Promise.resolve([]),
+            ]);
+            setAllProducts(products);
+            if (user?.role === 'admin') {
+                setArchivedProducts(archived);
+            }
+        } catch (e: any) {
+             const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+             setError(`Error al recargar productos: ${message}`);
+        }
+    }, [user]);
+
   const placeOrder = async (): Promise<boolean> => {
     if (!user || cart.length === 0) return false;
     setError(null);
@@ -267,14 +288,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
-            mockApi.getProducts().then(setAllProducts);
+            await refetchProducts();
             return true;
         }
         return false;
     } catch (e: any) {
         setError(e.message)
         alert(`Error al realizar el pedido: ${e.message}`);
-        mockApi.getProducts().then(setAllProducts);
+        await refetchProducts();
         return false;
     }
   };
@@ -296,7 +317,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
         await mockApi.cancelOrder(orderId, user.id);
         setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
-        mockApi.getProducts().then(setAllProducts);
+        await refetchProducts();
     } catch (e: any) {
         setError(e.message);
     }
@@ -315,8 +336,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = async (productData: Omit<Product, 'id'>) => {
     setError(null);
     try {
-        const newProduct = await mockApi.addProduct(productData);
-        setAllProducts(prev => [newProduct, ...prev]);
+        await mockApi.addProduct(productData);
+        await refetchProducts();
     } catch (e: any) {
         setError(e.message);
     }
@@ -325,14 +346,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateProduct = async (updatedProduct: Product) => {
     setError(null);
     try {
-        const result = await mockApi.updateProduct(updatedProduct);
-        if(result){
-            if (result.isArchived) {
-                setAllProducts(prev => prev.filter(p => p.id !== result.id));
-            } else {
-                setAllProducts(prev => prev.map(p => p.id === result.id ? result : p));
-            }
-        }
+        await mockApi.updateProduct(updatedProduct);
+        await refetchProducts();
     } catch (e: any) {
         setError(e.message);
     }
@@ -342,25 +357,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setError(null);
     try {
       await mockApi.archiveProduct(productId);
-      setAllProducts(prev => prev.filter(p => p.id !== productId));
+      await refetchProducts();
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
       alert(`No se pudo archivar el producto: ${errorMessage}`);
     }
-  }, []);
+  }, [refetchProducts]);
   
   const deleteProductPermanently = useCallback(async (productId: string) => {
     setError(null);
     try {
       await mockApi.deleteProductPermanently(productId);
-      setAllProducts(prev => prev.filter(p => p.id !== productId));
+      await refetchProducts();
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
       alert(`Error al eliminar el producto: ${errorMessage}`);
     }
-  }, []);
+  }, [refetchProducts]);
   
   const deleteCustomer = async (customerId: string) => {
     setError(null);
@@ -416,17 +431,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setError(null);
     try {
         await mockApi.addProductReview(productId, user.id, `${user.firstName} ${user.paternalLastName}`, rating, comment);
-        
-        // Refetch all products to get updated ratings for product list pages
-        const updatedProducts = await mockApi.getProducts();
-        setAllProducts(updatedProducts);
+        await refetchProducts(); // Refetch all products to get updated ratings
         return { success: true };
     } catch (e: any) {
         const message = e.message || 'Ocurrió un error desconocido.';
         setError(message);
         return { success: false, message };
     }
-  }, [user]);
+  }, [user, refetchProducts]);
   
   const checkIfUserPurchasedProduct = useCallback((productId: string): boolean => {
       if (!user) return false;
@@ -461,6 +473,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     cancelOrder,
     updateOrderStatus,
     allProducts,
+    archivedProducts,
     customers,
     addProduct,
     updateProduct,

@@ -243,6 +243,15 @@ export const mockApi = {
                 ...getProductRatings(p.id)
             }));
     },
+    async getArchivedProducts(): Promise<Product[]> {
+        await delay(500);
+        return [...mockProducts]
+            .filter(p => p.isArchived)
+            .map(p => ({
+                ...p,
+                ...getProductRatings(p.id)
+            }));
+    },
     async getProduct(id: string): Promise<Product | undefined> {
         await delay(300);
         const product = mockProducts.find(p => p.id === id);

@@ -24,6 +24,7 @@ import AdminOrderDetailPage from './pages/admin/AdminOrderDetailPage';
 import MessagesPage from './pages/MessagesPage';
 import AdminChatPage from './pages/admin/AdminChatPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminArchivedProductsPage from './pages/admin/AdminArchivedProductsPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -48,6 +49,7 @@ const AppRoutes: React.FC = () => {
                   <Route index element={<Navigate to="dashboard" replace />} />
                   <Route path="dashboard" element={<AdminDashboardPage />} />
                   <Route path="products" element={<AdminProductsPage />} />
+                  <Route path="products/archived" element={<AdminArchivedProductsPage />} />
                   <Route path="products/new" element={<ProductFormPage />} />
                   <Route path="products/edit/:productId" element={<ProductFormPage />} />
                   <Route path="customers" element={<AdminCustomersPage />} />
