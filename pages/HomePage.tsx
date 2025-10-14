@@ -14,7 +14,7 @@ const HomePage: React.FC = () => {
   const mainCarouselSlides = [
     {
       videoUrl: 'https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-      title: 'Siente la Tela, Vive el Estilo',
+      title: 'Siente la Moda, Vive el Estilo',
       subtitle: 'Nuestra colección en movimiento, diseñada para ti.',
       link: '/category/dama',
     },
