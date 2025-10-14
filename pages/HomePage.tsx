@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import ProductCard from '../components/ProductCard';
 import Carousel from '../components/Carousel';
+import CategoryCarousel from '../components/CategoryCarousel';
 import { useAppContext } from '../context/AppContext';
 
 const HomePage: React.FC = () => {
@@ -56,7 +57,9 @@ const HomePage: React.FC = () => {
     <>
       <Carousel slides={mainCarouselSlides} />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <CategoryCarousel />
+
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
         <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-12 text-center bg-gradient-to-r from-amber-500 via-primary to-amber-500 bg-clip-text text-transparent">Productos Destacados</h2>
         {loading ? (
           <div className="text-center py-10">
