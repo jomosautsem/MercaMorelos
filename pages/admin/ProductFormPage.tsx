@@ -65,19 +65,29 @@ const ProductFormPage: React.FC = () => {
         setIsLoading(true);
         
         const stockValue = parseInt(String(formData.stock), 10) || 0;
-        const productDataForApi: Omit<Product, 'id'> = {
-            name: formData.name,
-            description: formData.description,
-            imageUrl: formData.imageUrl,
-            category: formData.category,
-            price: Number(formData.price) || 0,
-            stock: stockValue,
-            isArchived: stockValue <= 0,
-        };
-
+        
         if (isEditing) {
-            await updateProduct({ ...productDataForApi, id: productId! });
+             const productDataForApi: Product = {
+                id: productId!,
+                name: formData.name,
+                description: formData.description,
+                imageUrl: formData.imageUrl,
+                category: formData.category,
+                price: Number(formData.price) || 0,
+                stock: stockValue,
+                isArchived: formData.isArchived, // Preserve existing status on edit
+            };
+            await updateProduct(productDataForApi);
         } else {
+            const productDataForApi: Omit<Product, 'id'> = {
+                name: formData.name,
+                description: formData.description,
+                imageUrl: formData.imageUrl,
+                category: formData.category,
+                price: Number(formData.price) || 0,
+                stock: stockValue,
+                isArchived: false, // New products are never archived by default
+            };
             await addProduct(productDataForApi);
         }
         setIsLoading(false);

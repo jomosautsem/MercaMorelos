@@ -70,10 +70,10 @@ router.post('/', protect, admin, async (req, res) => {
     const { name, price, imageUrl, category, description, stock } = req.body;
     try {
         const numericStock = Number(stock) || 0;
-        const isArchived = numericStock <= 0;
+        // When creating a product, it is active by default, regardless of stock.
         const newProduct = await db.query(
             'INSERT INTO products (name, price, "imageUrl", category, description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [name, price, imageUrl, category, description, numericStock, isArchived]
+            [name, price, imageUrl, category, description, numericStock, false]
         );
         res.status(201).json(newProduct.rows[0]);
     } catch (err) {
@@ -83,17 +83,18 @@ router.post('/', protect, admin, async (req, res) => {
 });
 
 // @route   PUT /api/products/:id
-// @desc    Update a product and its archived status based on stock
+// @desc    Update a product. If stock is added, it will be un-archived.
 // @access  Private/Admin
 router.put('/:id', protect, admin, async (req, res) => {
     const { name, price, imageUrl, category, description, stock } = req.body;
     try {
         const numericStock = Number(stock) || 0;
-        const isArchived = numericStock <= 0;
 
         const updatedProduct = await db.query(
-            'UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, description = $5, stock = $6, "isArchived" = $7 WHERE id = $8 RETURNING *',
-            [name, price, imageUrl, category, description, numericStock, isArchived, req.params.id]
+            `UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, description = $5, stock = $6, 
+             "isArchived" = (CASE WHEN $6 > 0 THEN false ELSE "isArchived" END) 
+             WHERE id = $7 RETURNING *`,
+            [name, price, imageUrl, category, description, numericStock, req.params.id]
         );
         if (updatedProduct.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });

@@ -83,7 +83,7 @@ const mockProducts: Product[] = [
     category: 'nino',
     description: 'Un vestido de ensueño con una falda de tul brillante y detalles de lentejuelas. Ideal para fiestas y ocasiones especiales.',
     stock: 0,
-    isArchived: true,
+    isArchived: false,
   },
   {
     id: '9',
@@ -311,9 +311,6 @@ export const mockApi = {
                 return null;
             }
             product.stock -= item.quantity;
-            if (product.stock <= 0) {
-                product.isArchived = true;
-            }
         }
         const newOrder: Order = {
             id: `order-${Date.now()}`,
@@ -337,10 +334,7 @@ export const mockApi = {
                 const product = mockProducts.find(p => p.id === item.id);
                 if (product) {
                     product.stock += item.quantity;
-                    // Un-archive if it was archived and now has stock
-                    if (product.stock > 0) {
-                        product.isArchived = false;
-                    }
+                    // No auto un-archiving. Admin must restore manually.
                 }
             }
             return true;
@@ -361,7 +355,7 @@ export const mockApi = {
         const newProduct: Product = {
             id: `prod-${Date.now()}`,
             ...productData,
-            isArchived: productData.stock <= 0,
+            isArchived: false, // Products are always created as active
         };
         mockProducts.unshift(newProduct);
         return newProduct;
@@ -371,9 +365,9 @@ export const mockApi = {
         const index = mockProducts.findIndex(p => p.id === updatedProduct.id);
         if (index > -1) {
             const productToUpdate = { ...updatedProduct };
-            if (productToUpdate.stock <= 0) {
-                productToUpdate.isArchived = true;
-            } else {
+            // If stock is added to a product, it becomes un-archived.
+            // This is mainly for the "restore" functionality.
+            if (productToUpdate.stock > 0) {
                 productToUpdate.isArchived = false;
             }
             mockProducts[index] = productToUpdate;

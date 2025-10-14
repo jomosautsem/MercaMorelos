@@ -55,9 +55,8 @@ router.post('/', protect, async (req, res) => {
                 'INSERT INTO order_items ("orderId", "productId", quantity, price) VALUES ($1, $2, $3, $4)',
                 [newOrder.id, item.id, item.quantity, item.price]
             );
-            // This query now also handles auto-archiving if stock reaches 0 or less
             await client.query(
-                'UPDATE products SET stock = stock - $1, "isArchived" = (stock - $1 <= 0) WHERE id = $2',
+                'UPDATE products SET stock = stock - $1 WHERE id = $2',
                 [item.quantity, item.id]
             );
         }
@@ -286,7 +285,7 @@ router.put('/:id/cancel', protect, async (req, res) => {
         // Restock items
         for (const item of orderItemsResult.rows) {
             await client.query(
-                'UPDATE products SET stock = stock + $1, "isArchived" = false WHERE id = $2',
+                'UPDATE products SET stock = stock + $1 WHERE id = $2',
                 [item.quantity, item.productId]
             );
         }

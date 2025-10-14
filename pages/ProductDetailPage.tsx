@@ -137,7 +137,7 @@ const ProductDetailPage: React.FC = () => {
       <div className="bg-surface rounded-lg shadow-2xl p-6 md:p-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-start">
           <div className="rounded-lg overflow-hidden shadow-lg">
-            <img src={product.imageUrl} alt={product.name} className="w-full h-auto object-cover" />
+            <img src={product.imageUrl} alt={product.name} className={`w-full h-auto object-cover ${product.stock === 0 ? 'filter grayscale' : ''}`} />
           </div>
           <div>
             <h1 className="text-4xl lg:text-5xl font-extrabold text-on-surface mb-2 tracking-tight">{product.name}</h1>
@@ -160,7 +160,7 @@ const ProductDetailPage: React.FC = () => {
               ) : product.stock > 0 ? (
                   <p className="text-sm font-semibold text-yellow-400">¡Quedan pocas unidades! ({product.stock} disponibles)</p>
               ) : (
-                  <p className="text-sm font-semibold text-red-500">Agotado</p>
+                  <p className="text-sm font-semibold text-red-500">SIN STOCK</p>
               )}
             </div>
             
@@ -170,7 +170,7 @@ const ProductDetailPage: React.FC = () => {
                 disabled={isOutOfStock}
                 className="w-full sm:w-auto bg-primary text-white font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/20"
               >
-                {isOutOfStock ? (product.stock === 0 ? 'Agotado' : 'Stock máximo en carrito') : 'Añadir al carrito'}
+                {isOutOfStock ? (product.stock === 0 ? 'SIN STOCK' : 'Stock máximo en carrito') : 'Añadir al carrito'}
               </button>
             )}
           </div>

@@ -16,7 +16,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <div className="bg-surface rounded-lg shadow-lg overflow-hidden group transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 relative border border-transparent hover:border-primary/20">
       {isOutOfStock && (
         <div className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-md">
-          Agotado
+          SIN STOCK
         </div>
       )}
       <div className="overflow-hidden">
@@ -46,7 +46,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <button 
                 onClick={() => addToCart(product)}
                 disabled={isOutOfStock}
-                aria-label={isOutOfStock ? 'Producto agotado' : 'Añadir al carrito'}
+                aria-label={isOutOfStock ? 'Producto sin stock' : 'Añadir al carrito'}
                 className="w-12 h-12 bg-primary text-white rounded-full flex items-center justify-center shadow-lg hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary transition-all duration-300 disabled:bg-gray-500 disabled:cursor-not-allowed hover:scale-110"
             >
                 {isOutOfStock ? 
