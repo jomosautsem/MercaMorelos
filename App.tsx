@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -25,6 +25,7 @@ import MessagesPage from './pages/MessagesPage';
 import AdminChatPage from './pages/admin/AdminChatPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminArchivedProductsPage from './pages/admin/AdminArchivedProductsPage';
+import { WhatsAppIcon } from './components/icons';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -78,6 +79,31 @@ const ToastContainer: React.FC = () => {
     );
 };
 
+const WhatsAppButton: React.FC = () => {
+    const location = useLocation();
+    
+    // Do not show the button in the admin panel
+    if (location.pathname.startsWith('/admin')) {
+        return null;
+    }
+
+    const phoneNumber = "521234567890"; // Replace with the actual phone number
+    const message = "Hola, me gustaría obtener más información sobre sus productos.";
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+    return (
+        <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fixed bottom-6 right-6 z-30 bg-green-500 text-white w-16 h-16 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 hover:scale-110 transition-all duration-300 animate-float-in"
+            aria-label="Contactar por WhatsApp"
+        >
+            <WhatsAppIcon className="w-8 h-8"/>
+        </a>
+    );
+};
+
 const AppRoutes: React.FC = () => {
     const { user } = useAppContext();
     return (
@@ -119,6 +145,7 @@ const AppRoutes: React.FC = () => {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>
+          <WhatsAppButton />
           <Footer />
         </div>
     );
