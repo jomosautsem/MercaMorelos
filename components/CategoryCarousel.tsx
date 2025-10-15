@@ -13,7 +13,7 @@ const categories = [
 
 const CategoryCarousel: React.FC = () => {
   return (
-    <div className="relative -mt-12 z-10">
+    <div className="py-12">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-center space-x-4 overflow-x-auto py-2 scrollbar-hide">
           {categories.map((category, index) => (
