@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Product, CartItem, User, Order, Message, Review, ToastMessage } from '../types';
-import { api } from '../services/api';
+import { mockApi as api } from '../services/mockApi';
 
 interface AppContextType {
   isAuthenticated: boolean;
@@ -48,6 +48,7 @@ interface AppContextType {
   toasts: ToastMessage[];
   showToast: (message: string, type?: ToastMessage['type']) => void;
   removeToast: (id: number) => void;
+  getProduct: (productId: string) => Promise<Product | null>;
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -132,7 +133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const [fetchedCustomers, fetchedOrders, fetchedMessages, fetchedArchivedProducts] = await Promise.all([
               api.getCustomers(),
               api.getAllOrders(),
-              api.getMessages(),
+              api.getMessages(user.id),
               api.getArchivedProducts(),
             ]);
             setCustomers(fetchedCustomers);
@@ -141,8 +142,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setArchivedProducts(fetchedArchivedProducts);
           } else {
             const [fetchedOrders, fetchedMessages] = await Promise.all([
-               api.getMyOrders(),
-               api.getMessages()
+               api.getMyOrders(user.id),
+               api.getMessages(user.id)
             ]);
             setOrders(fetchedOrders);
             setMessages(fetchedMessages);
@@ -232,7 +233,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-      const updatedUser = await api.updateProfile(profileData);
+      const updatedUser = await api.updateProfile(user.id, profileData);
       setUser(updatedUser);
       localStorage.setItem('user', JSON.stringify(updatedUser));
       return updatedUser;
@@ -246,7 +247,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!user) return false;
       setError(null);
       try {
-          await api.changePassword(passwordData.current, passwordData.new);
+          await api.changePassword(user.id, passwordData.current, passwordData.new);
           return true;
       } catch (e: any) {
           setError(e.message);
@@ -325,7 +326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user || cart.length === 0) return false;
     setError(null);
     try {
-        const newOrder = await api.placeOrder(cart, user, cartTotal);
+        const newOrder = await api.placeOrder(user.id, cart, user, cartTotal);
         if (newOrder) {
             setOrders(prev => [newOrder, ...prev]);
             clearCart();
@@ -345,7 +346,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-        return await api.getOrderDetail(orderId);
+        return await api.getOrderDetail(orderId, user.id, user.role);
     } catch (e: any) {
         setError(e.message);
         return null;
@@ -356,7 +357,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await api.cancelOrder(orderId);
+        await api.cancelOrder(orderId, user.id);
         setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
         await refetchProducts();
     } catch (e: any) {
@@ -397,7 +398,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const archiveProduct = useCallback(async (productId: string) => {
     setError(null);
     try {
-      await api.deleteProduct(productId);
+      await api.archiveProduct(productId);
       await refetchProducts();
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
@@ -409,7 +410,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteProductPermanently = useCallback(async (productId: string) => {
     setError(null);
     try {
-      await api.deleteProduct(productId);
+      await api.deleteProductPermanently(productId);
       await refetchProducts();
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
@@ -432,7 +433,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        const newMessage = await api.sendMessage(text, toId);
+        const newMessage = await api.sendMessage(text, user.id, toId);
         setMessages(prev => [...prev, newMessage]);
     } catch (e: any) {
         setError(e.message);
@@ -443,7 +444,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return;
     setError(null);
     try {
-        await api.markMessagesAsRead(fromId);
+        await api.markMessagesAsRead(user.id, fromId);
         setMessages(prev => prev.map(msg => (msg.toId === user?.id && msg.fromId === fromId && !msg.read) ? { ...msg, read: true } : msg));
     } catch (e: any) {
         setError(e.message);
@@ -471,7 +472,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setError(null);
     try {
-        await api.addProductReview(productId, rating, comment);
+        const userName = `${user.firstName} ${user.paternalLastName}`;
+        await api.addProductReview(productId, user.id, userName, rating, comment);
         await refetchProducts(); // Refetch all products to get updated ratings
         return { success: true };
     } catch (e: any) {
@@ -487,6 +489,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           order.status === 'Entregado' && order.items.some(item => String(item.id) === String(productId))
       );
   }, [user, orders]);
+  
+  const getProduct = useCallback(async (productId: string): Promise<Product | null> => {
+    setError(null);
+    try {
+        const productFromAll = allProducts.find(p => p.id === productId);
+        if (productFromAll) return productFromAll;
+
+        if (user?.role === 'admin') {
+            const productFromArchived = archivedProducts.find(p => p.id === productId);
+            if (productFromArchived) return productFromArchived;
+        }
+        
+        const product = await api.getProduct(productId);
+        return product || null;
+    } catch (e: any) {
+        console.error(`Failed to get product ${productId}:`, e.message);
+        return null;
+    }
+  }, [allProducts, archivedProducts, user]);
 
 
   const value = {
@@ -533,6 +554,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     toasts,
     showToast,
     removeToast,
+    getProduct,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

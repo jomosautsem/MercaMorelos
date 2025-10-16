@@ -59,22 +59,24 @@ const ReviewForm: React.FC<{ productId: string, onSubmit: () => void }> = ({ pro
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
-  const { allProducts, addToCart, cart, getReviewsForProduct, isAuthenticated, checkIfUserPurchasedProduct, user } = useAppContext();
+  const { addToCart, cart, getReviewsForProduct, isAuthenticated, checkIfUserPurchasedProduct, user, getProduct } = useAppContext();
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     const loadData = async () => {
-      if (!productId) return;
+      if (!productId) {
+          setLoading(false);
+          return;
+      };
       setLoading(true);
       try {
-        const foundProduct = allProducts.find(p => p.id === productId);
+        const foundProduct = await getProduct(productId);
 
         if (foundProduct) {
           const reviewsData = await getReviewsForProduct(productId);
           
-          // Re-calculate review data based on fetched reviews to ensure it's up to date
           const reviewCount = reviewsData.length;
           const averageRating = reviewCount > 0
               ? reviewsData.reduce((acc, review) => acc + review.rating, 0) / reviewCount
@@ -99,14 +101,8 @@ const ProductDetailPage: React.FC = () => {
       }
     };
 
-    // The context loads allProducts initially. Once they are available, find the specific product.
-    if (allProducts.length > 0) {
-      loadData();
-    } else {
-      // Handle the case where allProducts might still be loading from the context
-      setLoading(true);
-    }
-  }, [productId, allProducts, getReviewsForProduct]);
+    loadData();
+  }, [productId, getProduct, getReviewsForProduct]);
 
 
   const reloadReviews = async () => {

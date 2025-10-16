@@ -49,7 +49,9 @@ const AdminProductsPage: React.FC = () => {
                                     <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded"/>
                                 </td>
                                 <th scope="row" className="px-6 py-4 font-medium text-on-surface whitespace-nowrap">
-                                    {product.name}
+                                    <Link to={`/admin/products/edit/${product.id}`} className="hover:underline hover:text-primary-focus transition-colors">
+                                        {product.name}
+                                    </Link>
                                 </th>
                                 <td className="px-6 py-4">${product.price.toFixed(2)}</td>
                                 <td className="px-6 py-4">{product.stock}</td>

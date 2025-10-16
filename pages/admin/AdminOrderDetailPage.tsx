@@ -75,7 +75,9 @@ const AdminOrderDetailPage: React.FC = () => {
                                 <li key={item.id} className="flex items-center py-4">
                                     <img src={item.imageUrl} alt={item.name} className="w-20 h-20 rounded-md object-cover mr-4" />
                                     <div className="flex-grow">
-                                        <p className="font-semibold text-on-surface">{item.name}</p>
+                                        <Link to={`/admin/products/edit/${item.id}`} className="font-semibold text-on-surface hover:underline hover:text-primary-focus transition-colors">
+                                            {item.name}
+                                        </Link>
                                         <p className="text-sm text-on-surface-secondary">Cantidad: {item.quantity}</p>
                                     </div>
                                     <div className="text-right">

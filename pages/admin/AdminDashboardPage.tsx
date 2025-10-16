@@ -28,7 +28,9 @@ const AdminDashboardPage: React.FC = () => {
                     <ul className="space-y-3">
                         {outOfStockProducts.map(product => (
                             <li key={product.id} className="flex items-center justify-between p-3 bg-surface rounded-md border border-border-color">
-                                <span className="font-medium text-on-surface">{product.name}</span>
+                                <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-on-surface hover:underline hover:text-primary-focus transition-colors">
+                                    {product.name}
+                                </Link>
                                 <div className="flex items-center space-x-3">
                                     <Link to={`/admin/products/edit/${product.id}`} className="font-semibold text-sm text-primary-focus hover:underline">Añadir Stock</Link>
                                     <button onClick={() => handleArchive(product.id, product.name)} className="font-semibold text-sm text-red-500 hover:underline">Archivar</button>
