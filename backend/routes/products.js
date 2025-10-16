@@ -67,13 +67,12 @@ router.get('/:id', async (req, res) => {
 // @desc    Create a product
 // @access  Private/Admin
 router.post('/', protect, admin, async (req, res) => {
-    const { name, price, imageUrl, category, description, stock } = req.body;
+    const { name, price, imageUrl, category, collectionId, description, stock } = req.body;
     try {
         const numericStock = Number(stock) || 0;
-        // When creating a product, it is active by default, regardless of stock.
         const newProduct = await db.query(
-            'INSERT INTO products (name, price, "imageUrl", category, description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-            [name, price, imageUrl, category, description, numericStock, false]
+            'INSERT INTO products (name, price, "imageUrl", category, "collectionId", description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+            [name, price, imageUrl, category, collectionId, description, numericStock, false]
         );
         res.status(201).json(newProduct.rows[0]);
     } catch (err) {
@@ -86,15 +85,15 @@ router.post('/', protect, admin, async (req, res) => {
 // @desc    Update a product. If stock is added, it will be un-archived.
 // @access  Private/Admin
 router.put('/:id', protect, admin, async (req, res) => {
-    const { name, price, imageUrl, category, description, stock } = req.body;
+    const { name, price, imageUrl, category, collectionId, description, stock } = req.body;
     try {
         const numericStock = Number(stock) || 0;
 
         const updatedProduct = await db.query(
-            `UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, description = $5, stock = $6, 
-             "isArchived" = (CASE WHEN $6 > 0 THEN false ELSE "isArchived" END) 
-             WHERE id = $7 RETURNING *`,
-            [name, price, imageUrl, category, description, numericStock, req.params.id]
+            `UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, "collectionId" = $5, description = $6, stock = $7, 
+             "isArchived" = (CASE WHEN $7 > 0 THEN false ELSE "isArchived" END) 
+             WHERE id = $8 RETURNING *`,
+            [name, price, imageUrl, category, collectionId, description, numericStock, req.params.id]
         );
         if (updatedProduct.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });
@@ -106,35 +105,35 @@ router.put('/:id', protect, admin, async (req, res) => {
     }
 });
 
-// @route   DELETE /api/products/:id
-// @desc    Archive a product if it's in orders, otherwise delete it.
+// @route   PUT /api/products/:id/archive
+// @desc    Archive a product
 // @access  Private/Admin
-router.delete('/:id', protect, admin, async (req, res) => {
+router.put('/:id/archive', protect, admin, async (req, res) => {
+    try {
+        const result = await db.query(
+            'UPDATE products SET "isArchived" = true WHERE id = $1 RETURNING id',
+            [req.params.id]
+        );
+        if (result.rowCount === 0) {
+            return res.status(404).json({ msg: 'Product not found' });
+        }
+        res.json({ msg: 'Product archived successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// @route   DELETE /api/products/:id/permanent
+// @desc    Delete a product permanently
+// @access  Private/Admin
+router.delete('/:id/permanent', protect, admin, async (req, res) => {
     const client = await db.getClient();
     try {
         await client.query('BEGIN');
-        const orderItemsResult = await client.query(
-            'SELECT 1 FROM order_items WHERE "productId" = $1 LIMIT 1',
-            [req.params.id]
-        );
-
-        let result;
-        let message;
-
-        if (orderItemsResult.rows.length > 0) {
-            result = await client.query(
-                'UPDATE products SET "isArchived" = true WHERE id = $1',
-                [req.params.id]
-            );
-            message = 'Product archived successfully';
-        } else {
-            await client.query('DELETE FROM reviews WHERE "productId" = $1', [req.params.id]);
-            result = await client.query(
-                'DELETE FROM products WHERE id = $1',
-                [req.params.id]
-            );
-            message = 'Product deleted successfully';
-        }
+        // Permanently deleting should also remove reviews, but not order items.
+        await client.query('DELETE FROM reviews WHERE "productId" = $1', [req.params.id]);
+        const result = await client.query('DELETE FROM products WHERE id = $1', [req.params.id]);
 
         if (result.rowCount === 0) {
             await client.query('ROLLBACK');
@@ -142,8 +141,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ msg: message });
-
+        res.json({ msg: 'Product deleted permanently' });
     } catch (err) {
         await client.query('ROLLBACK');
         console.error(err.message);
@@ -152,6 +150,7 @@ router.delete('/:id', protect, admin, async (req, res) => {
         client.release();
     }
 });
+
 
 // --- REVIEWS ---
 

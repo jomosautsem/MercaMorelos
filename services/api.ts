@@ -1,4 +1,4 @@
-import { Product, User, Order, Message, CartItem, Review } from '../types';
+import { Product, User, Order, Message, CartItem, Review, Collection } from '../types';
 
 // Use a relative path for the API endpoint.
 // This relies on the dev server (e.g., Vite) proxying requests from /api to the backend.
@@ -54,6 +54,13 @@ const normalizeReview = (review: any): Review => {
     };
 };
 
+const normalizeCollection = (collection: any): Collection => {
+    if (!collection) return collection;
+    // No fields to normalize for now, but good practice to have the function
+    return { ...collection };
+};
+
+
 export const api = {
     // AUTH
     async login(email: string, password: string): Promise<{user: User, token: string}> {
@@ -62,9 +69,9 @@ export const api = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
         });
+        // The backend returns the user object and token at the top level
         const data = await handleResponse(response);
-        const { token, ...user } = data;
-        return { user, token };
+        return { user: data, token: data.token };
     },
     async register(userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<{user: User, token: string}> {
          const response = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -73,8 +80,38 @@ export const api = {
             body: JSON.stringify(userData),
         });
         const data = await handleResponse(response);
-        const { token, ...user } = data;
-        return { user, token };
+        return { user: data, token: data.token };
+    },
+    // COLLECTIONS
+    async getCollections(): Promise<Collection[]> {
+        const response = await fetch(`${API_BASE_URL}/collections`);
+        const collections = await handleResponse(response);
+        return collections.map(normalizeCollection);
+    },
+    async addCollection(collectionData: Omit<Collection, 'id'>): Promise<Collection> {
+        const response = await fetch(`${API_BASE_URL}/collections`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(collectionData),
+        });
+        const newCollection = await handleResponse(response);
+        return normalizeCollection(newCollection);
+    },
+    async updateCollection(updatedCollection: Collection): Promise<Collection> {
+        const response = await fetch(`${API_BASE_URL}/collections/${updatedCollection.id}`, {
+            method: 'PUT',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(updatedCollection),
+        });
+        const result = await handleResponse(response);
+        return normalizeCollection(result);
+    },
+    async deleteCollection(collectionId: string): Promise<{msg: string}> {
+        const response = await fetch(`${API_BASE_URL}/collections/${collectionId}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders(),
+        });
+        return handleResponse(response);
     },
     // PRODUCTS
     async getProducts(): Promise<Product[]> {
@@ -110,13 +147,20 @@ export const api = {
         const result = await handleResponse(response);
         return normalizeProduct(result);
     },
-    async deleteProduct(productId: string): Promise<{msg: string}> {
-         const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders(),
-        });
-        return handleResponse(response);
-    },
+    async archiveProduct(productId: string): Promise<{msg: string}> {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}/archive`, {
+           method: 'PUT',
+           headers: getAuthHeaders(),
+       });
+       return handleResponse(response);
+   },
+   async deleteProductPermanently(productId: string): Promise<{msg: string}> {
+        const response = await fetch(`${API_BASE_URL}/products/${productId}/permanent`, {
+           method: 'DELETE',
+           headers: getAuthHeaders(),
+       });
+       return handleResponse(response);
+   },
     // ORDERS
     async getMyOrders(): Promise<Order[]> {
         const response = await fetch(`${API_BASE_URL}/orders/myorders`, { headers: getAuthHeaders() });
