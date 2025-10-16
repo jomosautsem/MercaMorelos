@@ -3,15 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
 import { Product } from '../../types';
 
-type ProductFormData = Omit<Product, 'id' | 'price' | 'stock'> & {
+type ProductFormData = Omit<Product, 'id' | 'price' | 'stock' | 'collectionId'> & {
     price: string | number;
     stock: string | number;
+    collectionId: string;
 };
 
 const ProductFormPage: React.FC = () => {
     const { productId } = useParams<{ productId: string }>();
     const navigate = useNavigate();
-    const { allProducts, addProduct, updateProduct } = useAppContext();
+    const { allProducts, collections, addProduct, updateProduct } = useAppContext();
     const isEditing = !!productId;
     const [isLoading, setIsLoading] = useState(false);
     
@@ -20,6 +21,7 @@ const ProductFormPage: React.FC = () => {
         price: '',
         imageUrl: '',
         category: 'dama',
+        collectionId: '',
         description: '',
         stock: '',
         isArchived: false,
@@ -30,14 +32,17 @@ const ProductFormPage: React.FC = () => {
         if (isEditing) {
             const productToEdit = allProducts.find(p => p.id === productId);
             if (productToEdit) {
-                setFormData(productToEdit);
+                setFormData({
+                    ...productToEdit,
+                    collectionId: productToEdit.collectionId || ''
+                });
                 setImagePreview(productToEdit.imageUrl);
             } else {
                 navigate('/admin/products');
             }
         }
     }, [isEditing, productId, allProducts, navigate]);
-
+    
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -62,33 +67,29 @@ const ProductFormPage: React.FC = () => {
             alert('Por favor, sube una imagen para el producto.');
             return;
         }
+         if (!formData.collectionId) {
+            alert('Por favor, selecciona una colección para el producto.');
+            return;
+        }
         setIsLoading(true);
         
         const stockValue = parseInt(String(formData.stock), 10) || 0;
         
+        const productData = {
+            name: formData.name,
+            description: formData.description,
+            imageUrl: formData.imageUrl,
+            category: formData.category,
+            collectionId: formData.collectionId,
+            price: Number(formData.price) || 0,
+            stock: stockValue,
+            isArchived: formData.isArchived,
+        }
+
         if (isEditing) {
-             const productDataForApi: Product = {
-                id: productId!,
-                name: formData.name,
-                description: formData.description,
-                imageUrl: formData.imageUrl,
-                category: formData.category,
-                price: Number(formData.price) || 0,
-                stock: stockValue,
-                isArchived: formData.isArchived, // Preserve existing status on edit
-            };
-            await updateProduct(productDataForApi);
+            await updateProduct({ ...productData, id: productId! });
         } else {
-            const productDataForApi: Omit<Product, 'id'> = {
-                name: formData.name,
-                description: formData.description,
-                imageUrl: formData.imageUrl,
-                category: formData.category,
-                price: Number(formData.price) || 0,
-                stock: stockValue,
-                isArchived: false, // New products are never archived by default
-            };
-            await addProduct(productDataForApi);
+            await addProduct(productData);
         }
         setIsLoading(false);
         navigate('/admin/products');
@@ -119,18 +120,27 @@ const ProductFormPage: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                        <div>
-                            <label htmlFor="category" className="block text-sm font-medium text-on-surface-secondary">Categoría</label>
+                            <label htmlFor="category" className="block text-sm font-medium text-on-surface-secondary">Categoría Principal</label>
                             <select name="category" id="category" value={formData.category} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-border-color bg-surface text-on-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                                 <option value="dama">Dama</option>
                                 <option value="nino">Niño</option>
                             </select>
                         </div>
-                         <div>
-                            <label className="block text-sm font-medium text-on-surface-secondary">Imagen del Producto</label>
-                            <div className="mt-1 flex items-center space-x-4">
-                                {imagePreview && <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded"/>}
-                                <input type="file" id="imageUrl" name="imageUrl" onChange={handleImageChange} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary-focus hover:file:bg-primary/20" />
-                            </div>
+                        <div>
+                            <label htmlFor="collectionId" className="block text-sm font-medium text-on-surface-secondary">Colección</label>
+                            <select name="collectionId" id="collectionId" value={formData.collectionId} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-border-color bg-surface text-on-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" disabled={collections.length === 0}>
+                                <option value="">-- Selecciona una colección --</option>
+                                {collections.map(collection => (
+                                    <option key={collection.id} value={collection.id}>{collection.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                     <div>
+                        <label className="block text-sm font-medium text-on-surface-secondary">Imagen del Producto</label>
+                        <div className="mt-1 flex items-center space-x-4">
+                            {imagePreview && <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded"/>}
+                            <input type="file" id="imageUrl" name="imageUrl" onChange={handleImageChange} accept="image/*" className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary-focus hover:file:bg-primary/20" />
                         </div>
                     </div>
                     <div className="flex justify-end space-x-4 pt-4">

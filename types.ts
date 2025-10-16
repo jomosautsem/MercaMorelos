@@ -8,12 +8,20 @@ export interface Review {
   date: string;
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  icon: string;
+  parentCategory: 'dama' | 'nino';
+}
+
 export interface Product {
   id: string;
   name: string;
   price: number;
   imageUrl: string;
   category: 'dama' | 'nino';
+  collectionId: string; // Link to a Collection
   description: string;
   stock: number;
   isArchived: boolean;

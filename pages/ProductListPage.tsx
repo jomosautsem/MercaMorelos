@@ -4,17 +4,29 @@ import ProductCard from '../components/ProductCard';
 import { useAppContext } from '../context/AppContext';
 
 const ProductListPage: React.FC = () => {
-  const { categoryId } = useParams<{ categoryId: 'dama' | 'nino' }>();
-  const { allProducts, loading, error } = useAppContext();
+  const { categoryId, collectionId } = useParams<{ categoryId?: 'dama' | 'nino', collectionId?: string }>();
+  const { allProducts, collections, loading, error } = useAppContext();
   
   const products = useMemo(() => {
+      if (collectionId) {
+          return allProducts.filter(p => p.collectionId === collectionId);
+      }
       if (categoryId) {
           return allProducts.filter(p => p.category === categoryId);
       }
       return [];
-  }, [categoryId, allProducts]);
+  }, [categoryId, collectionId, allProducts]);
 
-  const title = categoryId === 'dama' ? 'Ropa de Dama' : 'Ropa de Niño';
+  const title = useMemo(() => {
+    if (collectionId) {
+        return collections.find(c => c.id === collectionId)?.name || 'Colección';
+    }
+    if (categoryId) {
+        return categoryId === 'dama' ? 'Ropa de Dama' : 'Ropa de Niño';
+    }
+    return 'Productos';
+  }, [collectionId, categoryId, collections]);
+
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">

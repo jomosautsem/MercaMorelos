@@ -1,7 +1,7 @@
 
 
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Product, CartItem, User, Order, Message, Review, ToastMessage } from '../types';
+import { Product, CartItem, User, Order, Message, Review, ToastMessage, Collection } from '../types';
 import { mockApi as api } from '../services/mockApi';
 
 interface AppContextType {
@@ -30,6 +30,10 @@ interface AppContextType {
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
   allProducts: Product[];
   archivedProducts: Product[];
+  collections: Collection[];
+  addCollection: (collection: Omit<Collection, 'id'>) => Promise<void>;
+  updateCollection: (collection: Collection) => Promise<void>;
+  deleteCollection: (collectionId: string) => Promise<void>;
   customers: User[];
   addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
@@ -68,6 +72,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [orders, setOrders] = useState<Order[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [archivedProducts, setArchivedProducts] = useState<Product[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [customers, setCustomers] = useState<User[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,15 +111,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setToken(storedToken);
         }
         
-        // Cart is now loaded synchronously in useState initializer to prevent race conditions
-
-        const products = await api.getProducts();
+        const [products, fetchedCollections] = await Promise.all([
+            api.getProducts(),
+            api.getCollections()
+        ]);
         setAllProducts(products);
+        setCollections(fetchedCollections);
       } catch (e: any) {
          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
          console.error("Fallo al cargar los datos iniciales desde la API:", message);
-         setError(`Error al cargar productos: ${message}`);
-         showToast(`Error al cargar productos: ${message}`, 'error');
+         setError(`Error al cargar datos: ${message}`);
+         showToast(`Error al cargar datos: ${message}`, 'error');
       } finally {
         setLoading(false);
       }
@@ -321,6 +328,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
              setError(`Error al recargar productos: ${message}`);
         }
     }, [user]);
+    
+    const refetchCollections = useCallback(async () => {
+        try {
+            const fetchedCollections = await api.getCollections();
+            setCollections(fetchedCollections);
+        } catch (e: any) {
+            const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+            setError(`Error al recargar colecciones: ${message}`);
+        }
+    }, []);
 
   const placeOrder = async (): Promise<boolean> => {
     if (!user || cart.length === 0) return false;
@@ -418,6 +435,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast(`Error al eliminar el producto: ${errorMessage}`, 'error');
     }
   }, [refetchProducts, showToast]);
+  
+  const addCollection = async (collectionData: Omit<Collection, 'id'>) => {
+      setError(null);
+      try {
+          await api.addCollection(collectionData);
+          await refetchCollections();
+      } catch (e: any) {
+          setError(e.message);
+      }
+  };
+
+  const updateCollection = async (updatedCollection: Collection) => {
+      setError(null);
+      try {
+          await api.updateCollection(updatedCollection);
+          await refetchCollections();
+      } catch (e: any) {
+          setError(e.message);
+      }
+  };
+
+  const deleteCollection = async (collectionId: string) => {
+      setError(null);
+      try {
+          await api.deleteCollection(collectionId);
+          await Promise.all([refetchCollections(), refetchProducts()]);
+      } catch (e: any) {
+          setError(e.message);
+      }
+  };
   
   const deleteCustomer = async (customerId: string) => {
     setError(null);
@@ -536,6 +583,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateOrderStatus,
     allProducts,
     archivedProducts,
+    collections,
+    addCollection,
+    updateCollection,
+    deleteCollection,
     customers,
     addProduct,
     updateProduct,

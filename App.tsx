@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -26,6 +27,8 @@ import AdminChatPage from './pages/admin/AdminChatPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminArchivedProductsPage from './pages/admin/AdminArchivedProductsPage';
 import { WhatsAppIcon } from './components/icons';
+import AdminCollectionsPage from './pages/admin/AdminCollectionsPage';
+import CollectionFormPage from './pages/admin/CollectionFormPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -120,6 +123,9 @@ const AppRoutes: React.FC = () => {
                   <Route path="products/archived" element={<AdminArchivedProductsPage />} />
                   <Route path="products/new" element={<ProductFormPage />} />
                   <Route path="products/edit/:productId" element={<ProductFormPage />} />
+                  <Route path="collections" element={<AdminCollectionsPage />} />
+                  <Route path="collections/new" element={<CollectionFormPage />} />
+                  <Route path="collections/edit/:collectionId" element={<CollectionFormPage />} />
                   <Route path="customers" element={<AdminCustomersPage />} />
                   <Route path="orders" element={<AdminOrdersPage />} />
                   <Route path="orders/:orderId" element={<AdminOrderDetailPage />} />
@@ -130,6 +136,7 @@ const AppRoutes: React.FC = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/category/:categoryId" element={<ProductListPage />} />
+              <Route path="/collection/:collectionId" element={<ProductListPage />} />
               <Route path="/product/:productId" element={<ProductDetailPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />

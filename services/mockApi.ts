@@ -1,6 +1,14 @@
-import { Product, User, Order, Message, CartItem, Review } from '../types';
+import { Product, User, Order, Message, CartItem, Review, Collection } from '../types';
 
-// Let's create some mock data.
+const mockCollections: Collection[] = [
+  { id: 'col1', name: 'Vestidos', icon: '👗', parentCategory: 'dama' },
+  { id: 'col2', name: 'Blusas', icon: '👚', parentCategory: 'dama' },
+  { id: 'col3', name: 'Jeans Dama', icon: '👖', parentCategory: 'dama' },
+  { id: 'col4', name: 'Playeras Niño', icon: '👕', parentCategory: 'nino' },
+  { id: 'col5', name: 'Pantalones Niño', icon: '👖', parentCategory: 'nino' },
+  { id: 'col6', name: 'Sudaderas', icon: '🧥', parentCategory: 'nino' },
+  { id: 'col7', name: 'Accesorios', icon: '👜', parentCategory: 'dama' },
+];
 
 const mockProducts: Product[] = [
   // Ropa de Dama
@@ -10,6 +18,7 @@ const mockProducts: Product[] = [
     price: 49.99,
     imageUrl: 'https://picsum.photos/seed/dama1/400/400',
     category: 'dama',
+    collectionId: 'col1',
     description: 'Un vestido ligero y fresco, perfecto para los días soleados. Con un estampado floral vibrante y un corte favorecedor.',
     stock: 15,
     isArchived: false,
@@ -20,6 +29,7 @@ const mockProducts: Product[] = [
     price: 39.50,
     imageUrl: 'https://picsum.photos/seed/dama2/400/400',
     category: 'dama',
+    collectionId: 'col2',
     description: 'Blusa de seda con un tacto suave y un brillo sutil. Ideal para la oficina o una salida nocturna.',
     stock: 20,
     isArchived: false,
@@ -30,6 +40,7 @@ const mockProducts: Product[] = [
     price: 55.00,
     imageUrl: 'https://picsum.photos/seed/dama3/400/400',
     category: 'dama',
+    collectionId: 'col3',
     description: 'Jeans ajustados que realzan la figura. El tejido elástico proporciona comodidad durante todo el día.',
     stock: 10,
     isArchived: false,
@@ -40,6 +51,7 @@ const mockProducts: Product[] = [
     price: 45.00,
     imageUrl: 'https://picsum.photos/seed/dama4/400/400',
     category: 'dama',
+    collectionId: 'col1',
     description: 'Una falda midi versátil con un plisado delicado. Combínala con zapatillas o tacones para diferentes looks.',
     stock: 8,
     isArchived: false,
@@ -51,6 +63,7 @@ const mockProducts: Product[] = [
     price: 15.99,
     imageUrl: 'https://picsum.photos/seed/nino1/400/400',
     category: 'nino',
+    collectionId: 'col4',
     description: 'Camiseta de algodón suave con un divertido estampado de dinosaurios que brilla en la oscuridad.',
     stock: 25,
     isArchived: false,
@@ -61,6 +74,7 @@ const mockProducts: Product[] = [
     price: 25.00,
     imageUrl: 'https://picsum.photos/seed/nino2/400/400',
     category: 'nino',
+    collectionId: 'col6',
     description: 'Sudadera cálida y acogedora con orejitas de oso en la capucha. Perfecta para los días fríos.',
     stock: 12,
     isArchived: false,
@@ -71,6 +85,7 @@ const mockProducts: Product[] = [
     price: 22.50,
     imageUrl: 'https://picsum.photos/seed/nino3/400/400',
     category: 'nino',
+    collectionId: 'col5',
     description: 'Pantalones con múltiples bolsillos, ideales para las aventuras diarias de los más pequeños. Tejido duradero.',
     stock: 30,
     isArchived: false,
@@ -81,6 +96,7 @@ const mockProducts: Product[] = [
     price: 35.00,
     imageUrl: 'https://picsum.photos/seed/nino4/400/400',
     category: 'nino',
+    collectionId: 'col1', // Re-using for example
     description: 'Un vestido de ensueño con una falda de tul brillante y detalles de lentejuelas. Ideal para fiestas y ocasiones especiales.',
     stock: 0,
     isArchived: false,
@@ -91,6 +107,7 @@ const mockProducts: Product[] = [
     price: 30.00,
     imageUrl: 'https://picsum.photos/seed/nino5/400/400',
     category: 'nino',
+    collectionId: 'col6',
     description: 'Una chaqueta vaquera clásica en tamaño infantil. Resistente y siempre a la moda.',
     stock: 18,
     isArchived: false,
@@ -101,13 +118,13 @@ const mockProducts: Product[] = [
     price: 28.00,
     imageUrl: 'https://picsum.photos/seed/nino6/400/400',
     category: 'nino',
+    collectionId: 'col5',
     description: 'Conjunto cómodo de sudadera y pantalón de chándal. Perfecto para jugar y estar cómodo en casa.',
     stock: 22,
     isArchived: false,
   }
 ];
 
-// More mock data for users, orders, etc. can be added here.
 const mockAdmin: User = {
     id: 'admin-user',
     firstName: 'Admin',
@@ -234,6 +251,45 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Mock API functions
 export const mockApi = {
+    // COLLECTIONS
+    async getCollections(): Promise<Collection[]> {
+      await delay(200);
+      return [...mockCollections];
+    },
+    async addCollection(collectionData: Omit<Collection, 'id'>): Promise<Collection> {
+      await delay(400);
+      const newCollection: Collection = {
+          id: `col-${Date.now()}`,
+          ...collectionData,
+      };
+      mockCollections.push(newCollection);
+      return newCollection;
+    },
+    async updateCollection(updatedCollection: Collection): Promise<Collection | null> {
+        await delay(400);
+        const index = mockCollections.findIndex(c => c.id === updatedCollection.id);
+        if (index > -1) {
+            mockCollections[index] = updatedCollection;
+            return { ...mockCollections[index] };
+        }
+        return null;
+    },
+    async deleteCollection(collectionId: string): Promise<boolean> {
+        await delay(400);
+        const index = mockCollections.findIndex(c => c.id === collectionId);
+        if (index > -1) {
+            // Un-assign products from this collection before deleting
+            mockProducts.forEach(p => {
+                if (p.collectionId === collectionId) {
+                    p.collectionId = ''; // Or a default 'un-categorized' id
+                }
+            });
+            mockCollections.splice(index, 1);
+            return true;
+        }
+        return false;
+    },
+
     async getProducts(): Promise<Product[]> {
         await delay(500);
         return [...mockProducts]
