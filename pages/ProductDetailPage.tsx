@@ -156,7 +156,7 @@ const ProductDetailPage: React.FC = () => {
               ) : product.stock > 0 ? (
                   <p className="text-sm font-semibold text-amber-600">¡Quedan pocas unidades! ({product.stock} disponibles)</p>
               ) : (
-                  <p className="text-sm font-semibold text-red-600">SIN STOCK</p>
+                  <p className="text-sm font-semibold text-red-600">AGOTADO</p>
               )}
             </div>
             
@@ -166,7 +166,7 @@ const ProductDetailPage: React.FC = () => {
                 disabled={isOutOfStock}
                 className="w-full sm:w-auto bg-primary text-slate-900 font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40"
               >
-                {isOutOfStock ? (product.stock === 0 ? 'SIN STOCK' : 'Stock máximo en carrito') : 'Añadir al carrito'}
+                {isOutOfStock ? (product.stock === 0 ? 'AGOTADO' : 'Stock máximo en carrito') : 'Añadir al carrito'}
               </button>
             )}
           </div>

@@ -15,8 +15,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <div className="bg-surface rounded-lg shadow-md overflow-hidden group transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 relative border border-border-color">
       {isOutOfStock && (
-        <div className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-md">
-          SIN STOCK
+        <div className="absolute top-10 -right-20 transform rotate-45 bg-red-600 text-white text-center font-black text-3xl py-3 w-72 z-10 shadow-xl tracking-wider">
+          AGOTADO
         </div>
       )}
       <div className="overflow-hidden">
