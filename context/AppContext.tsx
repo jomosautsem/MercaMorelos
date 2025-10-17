@@ -517,7 +517,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setError(null);
     try {
-        await api.addProductReview(productId, user.id, `${user.firstName} ${user.paternalLastName}`, rating, comment);
+        // FIX: The call to `api.addProductReview` has been corrected to pass only the required arguments.
+        // The backend identifies the user via the authentication token, so `userId` and `userName` are no longer needed.
+        await api.addProductReview(productId, rating, comment);
         await refetchProducts(); // Refetch all products to get updated ratings
         return { success: true };
     } catch (e: any) {

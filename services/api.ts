@@ -1,6 +1,5 @@
-import { mockApi } from './mockApi';
+import { apiClient } from './apiClient';
 
-// By exporting the mockApi, the entire application will now use the mock data
-// instead of making real HTTP requests. This effectively reverts the application
-// to its previous state before the backend was integrated.
-export const api = mockApi;
+// By exporting the apiClient, the entire application will now use the live backend
+// for all data operations instead of the local mock data.
+export const api = apiClient;
