@@ -57,11 +57,17 @@ const HomePage: React.FC = () => {
     <>
       <Carousel slides={mainCarouselSlides} />
 
-      <div className="bg-gradient-to-b from-slate-800 to-background">
-        <CategoryCarousel />
+      {/* Category Carousel with a clean background */}
+      <div className="bg-surface">
+          <CategoryCarousel />
+      </div>
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16">
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-12 text-center bg-gradient-to-r from-amber-500 via-primary to-amber-500 bg-clip-text text-transparent">Productos Destacados</h2>
+      {/* Featured Products Section */}
+      <div className="bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black mb-12 text-center text-primary-focus">
+            Productos Destacados
+          </h2>
           {loading ? (
             <div className="text-center py-10">
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">

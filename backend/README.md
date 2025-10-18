@@ -23,9 +23,12 @@ PORT=4000
 
 ### 2. Database Initialization
 
-Connect to your PostgreSQL database using a client like `psql` or a GUI tool (e.g., pgAdmin, DBeaver, or the Supabase SQL Editor).
+Connect to your Supabase project's SQL Editor. The setup is a two-step process:
 
-You will need to run an `init.sql` script to create all the necessary tables (`users`, `products`, `orders`, etc.). If you have an `init.sql` file, copy its entire content and execute it. **This will erase existing data in the tables it modifies.**
+1.  **Create Tables:** First, run the full content of the `init.sql` script. This will create all the necessary tables (`users`, `products`, `orders`, etc.).
+2.  **Add Sample Data:** After the tables are created, run the full content of the `seed.sql` script. This will populate your new tables with sample collections and products so the store has content.
+
+**Note:** Running these scripts will erase existing data in the tables they modify.
 
 ### 3. Install Dependencies
 
