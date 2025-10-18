@@ -43,7 +43,7 @@ const AdminProductsPage: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {allProducts.map(product => (
+                        {allProducts.filter(p => p).map(product => (
                             <tr key={product.id} className="border-b border-border-color hover:bg-surface-light">
                                 <td className="px-6 py-4">
                                     <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded"/>

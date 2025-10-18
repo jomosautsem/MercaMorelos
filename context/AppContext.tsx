@@ -1,18 +1,34 @@
-
-
-import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Product, CartItem, User, Order, Message, Review, ToastMessage, Collection } from '../types';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import { Product, User, CartItem, Order, Message, ToastMessage, Review, Collection } from '../types';
 import { api } from '../services/api';
+import { db, PendingRegistration } from '../services/db';
 
 interface AppContextType {
-  isAuthenticated: boolean;
+  // Auth & User
   user: User | null;
-  token: string | null;
-  login: (email: string, password: string) => Promise<User | null>;
-  register: (userData: Omit<User, 'id' | 'role'> & { password: string }) => Promise<User | null>;
+  isAuthenticated: boolean;
+  login: (email: string, pass: string) => Promise<User | null>;
+  register: (userData: PendingRegistration) => Promise<User | null>;
   logout: () => void;
-  updateProfile: (profileData: Partial<Omit<User, 'id' | 'role' | 'email'>>) => Promise<User | null>;
-  changePassword: (passwordData: { current: string, new: string }) => Promise<boolean>;
+  updateProfile: (profileData: Partial<User>) => Promise<User | null>;
+  changePassword: (passwordData: { current: string; new: string }) => Promise<boolean>;
+
+  // Products
+  allProducts: Product[];
+  archivedProducts: Product[];
+  getProduct: (id: string) => Promise<Product | undefined>;
+  addProduct: (productData: Omit<Product, 'id'>) => Promise<boolean>;
+  updateProduct: (updatedProduct: Product) => Promise<Product | null>;
+  archiveProduct: (productId: string) => Promise<void>;
+  deleteProductPermanently: (productId: string) => Promise<void>;
+  
+  // Collections
+  collections: Collection[];
+  addCollection: (collectionData: Omit<Collection, 'id'>) => Promise<void>;
+  updateCollection: (updatedCollection: Collection) => Promise<void>;
+  deleteCollection: (collectionId: string) => Promise<void>;
+
+  // Cart
   cart: CartItem[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
@@ -20,626 +36,491 @@ interface AppContextType {
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  searchResults: Product[];
+
+  // Orders
   orders: Order[];
   getOrderDetail: (orderId: string) => Promise<Order | null>;
   placeOrder: () => Promise<boolean>;
   cancelOrder: (orderId: string) => Promise<void>;
   updateOrderStatus: (orderId: string, status: Order['status']) => Promise<void>;
-  allProducts: Product[];
-  archivedProducts: Product[];
-  collections: Collection[];
-  addCollection: (collection: Omit<Collection, 'id'>) => Promise<void>;
-  updateCollection: (collection: Collection) => Promise<void>;
-  deleteCollection: (collectionId: string) => Promise<void>;
+  checkIfUserPurchasedProduct: (productId: string) => boolean;
+
+  // Reviews
+  getReviewsForProduct: (productId: string) => Promise<Review[]>;
+  addProductReview: (productId: string, rating: number, comment: string) => Promise<{ success: boolean; message?: string }>;
+  
+  // Admin
   customers: User[];
-  addProduct: (product: Omit<Product, 'id' | 'isArchived'> & { isArchived: boolean }) => Promise<void>;
-  updateProduct: (product: Product) => Promise<void>;
-  archiveProduct: (productId: string) => Promise<void>;
-  deleteProductPermanently: (productId: string) => Promise<void>;
   deleteCustomer: (customerId: string) => Promise<void>;
+
+  // Messaging
   messages: Message[];
   sendMessage: (text: string, toId: string) => Promise<void>;
   markMessagesAsRead: (fromId: string) => Promise<void>;
   unreadMessagesCount: number;
+
+  // Search
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchResults: Product[];
+
+  // UI
   loading: boolean;
   error: string | null;
-  getReviewsForProduct: (productId: string) => Promise<Review[]>;
-  addProductReview: (productId: string, rating: number, comment: string) => Promise<{ success: boolean; message?: string }>;
-  checkIfUserPurchasedProduct: (productId: string) => boolean;
   toasts: ToastMessage[];
-  showToast: (message: string, type?: ToastMessage['type']) => void;
+  addToast: (message: string, type: ToastMessage['type']) => void;
   removeToast: (id: number) => void;
-  getProduct: (productId: string) => Promise<Product | null>;
 }
 
-export const AppContext = createContext<AppContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const storedCart = localStorage.getItem('cart');
-      return storedCart ? JSON.parse(storedCart) : [];
-    } catch (error) {
-      console.error("Failed to parse cart from localStorage:", error);
-      return [];
-    }
-  });
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [archivedProducts, setArchivedProducts] = useState<Product[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [customers, setCustomers] = useState<User[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [toasts, setToasts] = useState<ToastMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const toastIdRef = useRef(0);
-  const cartRef = useRef(cart);
-
-  useEffect(() => {
-    cartRef.current = cart;
-  }, [cart]);
-
-  const removeToast = (id: number) => {
-    setToasts(currentToasts => currentToasts.filter(toast => toast.id !== id));
-  };
-
-  const showToast = useCallback((message: string, type: ToastMessage['type'] = 'info') => {
-    const id = toastIdRef.current++;
-    setToasts(currentToasts => [...currentToasts, { id, message, type }]);
-    setTimeout(() => {
-        removeToast(id);
-    }, 5000); // Auto-dismiss after 5 seconds
-  }, []);
-
-  // Initial load
-  useEffect(() => {
-    const init = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const storedUser = localStorage.getItem('user');
-        const storedToken = localStorage.getItem('token');
-        if (storedUser && storedToken) {
-          setUser(JSON.parse(storedUser));
-          setToken(storedToken);
-        }
-        
-        const [products, fetchedCollections] = await Promise.all([
-            api.getProducts(),
-            api.getCollections()
-        ]);
-        setAllProducts(products);
-        setCollections(fetchedCollections);
-      } catch (e: any) {
-         const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-         console.error("Fallo al cargar los datos iniciales desde la API:", message);
-         setError(`Error al cargar datos: ${message}`);
-         showToast(`Error al cargar datos: ${message}`, 'error');
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, [showToast]);
-
-  // Fetch data when user logs in
-  useEffect(() => {
-    if (user && token) {
-      const fetchData = async () => {
-        setLoading(true);
-        setError(null);
+export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    // State
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    const [archivedProducts, setArchivedProducts] = useState<Product[]>([]);
+    const [collections, setCollections] = useState<Collection[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [customers, setCustomers] = useState<User[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [toasts, setToasts] = useState<ToastMessage[]>([]);
+    const [cart, setCart] = useState<CartItem[]>(() => {
         try {
-          if (user.role === 'admin') {
-            const [fetchedCustomers, fetchedOrders, fetchedMessages, fetchedArchivedProducts] = await Promise.all([
-              api.getCustomers(),
-              api.getAllOrders(),
-              api.getMessages(user.id),
-              api.getArchivedProducts(),
-            ]);
-            setCustomers(fetchedCustomers);
-            setOrders(fetchedOrders);
-            setMessages(fetchedMessages);
-            setArchivedProducts(fetchedArchivedProducts);
-          } else {
-            const [fetchedOrders, fetchedMessages] = await Promise.all([
-               api.getMyOrders(user.id),
-               api.getMessages(user.id)
-            ]);
-            setOrders(fetchedOrders);
-            setMessages(fetchedMessages);
-          }
-        } catch (e: any) {
-          setError(e.message);
-        } finally {
-          setLoading(false);
+            return JSON.parse(localStorage.getItem('cart') || '[]');
+        } catch {
+            return [];
         }
-      };
-      fetchData();
-    }
-  }, [user, token]);
-  
-  // Persist cart
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
-
-
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim()) return [];
-    const lowercasedQuery = searchQuery.toLowerCase();
-    return allProducts.filter(product =>
-      product.name.toLowerCase().includes(lowercasedQuery) ||
-      product.description.toLowerCase().includes(lowercasedQuery)
-    );
-  }, [searchQuery, allProducts]);
-
-  const login = async (email: string, password: string): Promise<User | null> => {
-    setError(null);
-    try {
-      const data = await api.login(email, password);
-      if (data && data.user && data.token) {
-        const { user: loggedInUser, token } = data;
-        setUser(loggedInUser);
-        setToken(token);
-        localStorage.setItem('user', JSON.stringify(loggedInUser));
-        localStorage.setItem('token', token);
-        return loggedInUser;
-      }
-      setError('Credenciales incorrectas.');
-      showToast('Credenciales incorrectas.', 'error');
-      return null;
-    } catch (e: any) {
-      setError(e.message);
-      showToast(e.message, 'error');
-      return null;
-    }
-  };
-
-  const register = async (userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<User | null> => {
-    setError(null);
-    try {
-      const data = await api.register(userData);
-       if (data && data.user && data.token) {
-        const { user: newUser, token } = data;
-        setUser(newUser);
-        setToken(token);
-        localStorage.setItem('user', JSON.stringify(newUser));
-        localStorage.setItem('token', token);
-        return newUser;
-       }
-       setError('El correo electrónico ya está en uso.');
-       showToast('El correo electrónico ya está en uso.', 'error');
-       return null;
-    } catch (e: any) {
-      setError(e.message);
-      showToast(e.message, 'error');
-      return null;
-    }
-  };
-  
-  const clearCart = useCallback(() => setCart([]), []);
-
-  const logout = useCallback(() => {
-    setUser(null);
-    setToken(null);
-    clearCart(); // Clear the cart on logout
-    setOrders([]);
-    setMessages([]);
-    setCustomers([]);
-    setArchivedProducts([]);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-  }, [clearCart]);
-
-  const updateProfile = async (profileData: Partial<Omit<User, 'id' | 'role' | 'email'>>): Promise<User | null> => {
-    if (!user) return null;
-    setError(null);
-    try {
-      const updatedUser = await api.updateProfile(user.id, profileData);
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      return updatedUser;
-    } catch(e: any) {
-      setError(e.message);
-      showToast(e.message, 'error');
-      return null;
-    }
-  };
-    
-  const changePassword = async (passwordData: { current: string, new: string }): Promise<boolean> => {
-      if (!user) return false;
-      setError(null);
-      try {
-          await api.changePassword(user.id, passwordData.current, passwordData.new);
-          return true;
-      } catch (e: any) {
-          setError(e.message);
-          showToast(e.message, 'error');
-          return false;
-      }
-  };
-
-  const addToCart = useCallback((product: Product) => {
-    const productInStock = allProducts.find(p => p.id === product.id);
-    if (!productInStock || productInStock.stock <= 0) {
-      showToast('Este producto está agotado.', 'error');
-      return;
-    }
-
-    const existingItem = cartRef.current.find(item => item.id === product.id);
-    const currentQuantityInCart = existingItem ? existingItem.quantity : 0;
-
-    if (productInStock.stock <= currentQuantityInCart) {
-      showToast('No hay suficiente stock para agregar más de este artículo.', 'error');
-      return;
-    }
-    
-    showToast(`${product.name} añadido al carrito`, 'success');
-    setCart(prevCart => {
-      const existingItemInPrev = prevCart.find(item => item.id === product.id);
-      if (existingItemInPrev) {
-        return prevCart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
-      }
-      return [...prevCart, { ...product, quantity: 1 }];
     });
-  }, [allProducts, showToast]);
+    const [searchQuery, setSearchQuery] = useState('');
 
-  const removeFromCart = useCallback((productId: string) => {
-    const itemToRemove = cartRef.current.find(item => item.id === productId);
-    if (itemToRemove) {
-      showToast(`${itemToRemove.name} eliminado del carrito`, 'info');
-    }
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
-  }, [showToast]);
+    // --- Memos for derived state ---
+    const cartCount = useMemo(() => cart.reduce((count, item) => count + item.quantity, 0), [cart]);
+    const cartTotal = useMemo(() => cart.reduce((total, item) => total + item.price * item.quantity, 0), [cart]);
+    const searchResults = useMemo(() => {
+        if (!searchQuery) return [];
+        return allProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [searchQuery, allProducts]);
+    const unreadMessagesCount = useMemo(() => {
+        if (!user) return 0;
+        return messages.filter(msg => msg.toId === user.id && !msg.read).length;
+    }, [messages, user]);
 
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    const productInStock = allProducts.find(p => p.id === productId);
-    if (productInStock && quantity > productInStock.stock) {
-      showToast(`Solo quedan ${productInStock.stock} artículos en stock.`, 'error');
-      setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity: productInStock.stock } : item));
-    } else {
-      setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity } : item));
-    }
-  }, [removeFromCart, allProducts, showToast]);
-
-
-  const cartCount = useMemo(() => cart.reduce((count, item) => count + item.quantity, 0), [cart]);
-  const cartTotal = useMemo(() => cart.reduce((total, item) => total + item.price * item.quantity, 0), [cart]);
-
-    const refetchProducts = useCallback(async () => {
-        try {
-            const [products, archived] = await Promise.all([
-                api.getProducts(),
-                user?.role === 'admin' ? api.getArchivedProducts() : Promise.resolve([]),
-            ]);
-            setAllProducts(products);
-            if (user?.role === 'admin') {
-                setArchivedProducts(archived);
-            }
-        } catch (e: any) {
-             const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-             setError(`Error al recargar productos: ${message}`);
-        }
-    }, [user]);
-    
-    const refetchCollections = useCallback(async () => {
-        try {
-            const fetchedCollections = await api.getCollections();
-            setCollections(fetchedCollections);
-        } catch (e: any) {
-            const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-            setError(`Error al recargar colecciones: ${message}`);
-        }
+    // --- UI Methods ---
+    const removeToast = useCallback((id: number) => {
+        setToasts(prev => prev.filter(toast => toast.id !== id));
     }, []);
 
-  const placeOrder = async (): Promise<boolean> => {
-    if (!user || cart.length === 0) return false;
-    setError(null);
-    try {
-        const newOrder = await api.placeOrder(user.id, cart, user, cartTotal);
-        if (newOrder) {
-            setOrders(prev => [newOrder, ...prev]);
-            clearCart();
-            await refetchProducts();
+    const addToast = useCallback((message: string, type: ToastMessage['type']) => {
+        const id = Date.now();
+        setToasts(prev => [...prev, { id, message, type }]);
+        setTimeout(() => removeToast(id), 5000);
+    }, [removeToast]);
+
+    // --- Data Fetching ---
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const [productsData, collectionsData] = await Promise.all([api.getProducts(), api.getCollections()]);
+            setAllProducts(productsData);
+            setCollections(collectionsData);
+        } catch (e) {
+            addToast(`Error al cargar datos: ${(e as Error).message}`, 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [addToast]);
+    
+    const fetchAdminData = useCallback(async () => {
+        if (user?.role !== 'admin') {
+            setCustomers([]);
+            setArchivedProducts([]);
+            return;
+        }
+        try {
+            const [archived, allOrders, allCustomers] = await Promise.all([
+                api.getArchivedProducts(),
+                api.getAllOrders(),
+                api.getCustomers()
+            ]);
+            setArchivedProducts(archived);
+            setOrders(allOrders);
+            setCustomers(allCustomers);
+        } catch (e) {
+            addToast(`Error al cargar datos de admin: ${(e as Error).message}`, 'error');
+        }
+    }, [user, addToast]);
+
+    const fetchUserData = useCallback(async () => {
+        if (!isAuthenticated || !user) {
+            setOrders([]);
+            setMessages([]);
+            return;
+        }
+        try {
+            if (user.role === 'customer') {
+                const [userOrders, userMessages] = await Promise.all([api.getMyOrders(user.id), api.getMessages(user.id)]);
+                setOrders(userOrders);
+                setMessages(userMessages);
+            } else if (user.role === 'admin') {
+                const allMessages = await api.getMessages(user.id);
+                setMessages(allMessages);
+            }
+        } catch (e) {
+            addToast(`Error al cargar tus datos: ${(e as Error).message}`, 'error');
+        }
+    }, [isAuthenticated, user, addToast]);
+    
+    // Initial data load
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    // User-dependent data load
+    useEffect(() => {
+        fetchAdminData();
+        fetchUserData();
+    }, [user, isAuthenticated, fetchAdminData, fetchUserData]);
+    
+    // Persist cart
+    useEffect(() => {
+        localStorage.setItem('cart', JSON.stringify(cart));
+    }, [cart]);
+
+
+    // --- Auth Methods ---
+    const login = useCallback(async (email: string, pass: string): Promise<User | null> => {
+        try {
+            const result = await api.login(email, pass);
+            if (result) {
+                localStorage.setItem('token', result.token);
+                setUser(result.user);
+                setIsAuthenticated(true);
+                addToast(`¡Bienvenido, ${result.user.firstName}!`, 'success');
+                return result.user;
+            }
+            return null;
+        } catch (e) {
+            addToast((e as Error).message, 'error');
+            return null;
+        }
+    }, [addToast]);
+
+    const register = useCallback(async (userData: PendingRegistration): Promise<User | null> => {
+        if (!navigator.onLine) {
+            try {
+                await db.pendingRegistrations.add(userData);
+                if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                    // Fix: Cast service worker registration to `any` to access the `sync` property for background sync.
+                    navigator.serviceWorker.ready.then(sw => (sw as any).sync.register('sync-new-registrations'));
+                }
+                addToast('Sin conexión. Tu registro se completará automáticamente.', 'info');
+                return null;
+            } catch (e) {
+                addToast(`Error guardando registro: ${(e as Error).message}`, 'error');
+                return null;
+            }
+        }
+        try {
+            const result = await api.register(userData);
+            if (result) {
+                localStorage.setItem('token', result.token);
+                setUser(result.user);
+                setIsAuthenticated(true);
+                addToast(`¡Bienvenido, ${result.user.firstName}!`, 'success');
+                return result.user;
+            }
+            return null;
+        } catch (e) {
+            addToast((e as Error).message, 'error');
+            return null;
+        }
+    }, [addToast]);
+
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        setUser(null);
+        setIsAuthenticated(false);
+        setCart([]);
+        addToast('Has cerrado sesión.', 'info');
+    }, [addToast]);
+
+    const updateProfile = async (profileData: Partial<User>): Promise<User | null> => {
+        try {
+            const updatedUser = await api.updateProfile(user!.id, profileData);
+            setUser(updatedUser);
+            addToast('Perfil actualizado.', 'success');
+            return updatedUser;
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+            return null;
+        }
+    };
+
+    const changePassword = async (passwordData: { current: string; new: string }): Promise<boolean> => {
+        try {
+            await api.changePassword(user!.id, passwordData.current, passwordData.new);
             return true;
+        } catch(e) {
+            setError((e as Error).message);
+            addToast((e as Error).message, 'error');
+            return false;
         }
-        return false;
-    } catch (e: any) {
-        setError(e.message)
-        showToast(`Error al realizar el pedido: ${e.message}`, 'error');
-        await refetchProducts();
-        return false;
-    }
-  };
+    };
 
-  const getOrderDetail = async (orderId: string): Promise<Order | null> => {
-    if (!user) return null;
-    setError(null);
-    try {
-        return await api.getOrderDetail(orderId);
-    } catch (e: any) {
-        setError(e.message);
-        return null;
-    }
-  };
-
-  const cancelOrder = async (orderId: string) => {
-    if (!user) return;
-    setError(null);
-    try {
-        await api.cancelOrder(orderId, user.id);
-        setOrders(prevOrders => prevOrders.map(order => order.id === orderId ? { ...order, status: 'Cancelado' } : order));
-        await refetchProducts();
-    } catch (e: any) {
-        setError(e.message);
-    }
-  };
-
-  const updateOrderStatus = async (orderId: string, status: Order['status']) => {
-    setError(null);
-    try {
-        await api.updateOrderStatus(orderId, status);
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: status } : o));
-    } catch (e: any) {
-        setError(e.message);
-    }
-  };
-
-  const addProduct = async (productData: Omit<Product, 'id' | 'isArchived'> & { isArchived: boolean }) => {
-    setError(null);
-    try {
-      const newProduct = await api.addProduct(productData);
-      setAllProducts(prev => [newProduct, ...prev]);
-      showToast('Producto creado con éxito.', 'success');
-    } catch (e: any) {
-      const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-      setError(message);
-      showToast(`Error al crear el producto: ${message}`, 'error');
-    }
-  };
-
-  const updateProduct = async (updatedProduct: Product) => {
-    setError(null);
-    try {
-        const returnedProduct = await api.updateProduct(updatedProduct);
-        if (returnedProduct) {
-            // After an update, the safest way to ensure UI consistency 
-            // (especially if the archived status changes) is to refetch.
-            await refetchProducts();
-            showToast('Producto actualizado con éxito.', 'success');
+    // --- Product Methods ---
+    const getProduct = useCallback(async (id: string) => {
+        return api.getProduct(id);
+    }, []);
+    
+    const addProduct = async (productData: Omit<Product, 'id'>): Promise<boolean> => {
+        try {
+            const newProduct = await api.addProduct(productData);
+            if (newProduct) {
+                // Refetch to ensure data consistency (e.g., calculated ratings)
+                await fetchData();
+                addToast('Producto añadido.', 'success');
+                return true;
+            }
+            return false;
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+            return false;
         }
-    } catch (e: any) {
-        const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-        setError(message);
-        showToast(`Error al actualizar el producto: ${message}`, 'error');
-    }
-  };
-
-  const archiveProduct = useCallback(async (productId: string) => {
-    setError(null);
-    try {
-      await api.archiveProduct(productId);
-      await refetchProducts();
-      showToast('Producto archivado con éxito.', 'success');
-    } catch (e: any) {
-      const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-      setError(errorMessage);
-      showToast(`No se pudo archivar el producto: ${errorMessage}`, 'error');
-    }
-  }, [refetchProducts, showToast]);
-  
-  const deleteProductPermanently = useCallback(async (productId: string) => {
-    setError(null);
-    try {
-      await api.deleteProductPermanently(productId);
-      await refetchProducts();
-       showToast('Producto eliminado permanentemente.', 'success');
-    } catch (e: any) {
-      const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-      setError(errorMessage);
-      showToast(`Error al eliminar el producto: ${errorMessage}`, 'error');
-    }
-  }, [refetchProducts, showToast]);
-  
-  const addCollection = async (collectionData: Omit<Collection, 'id'>) => {
-      setError(null);
-      try {
-          await api.addCollection(collectionData);
-          await refetchCollections();
-          showToast('Colección creada con éxito.', 'success');
-      } catch (e: any) {
-          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-          setError(message);
-          showToast(`Error al crear la colección: ${message}`, 'error');
-      }
-  };
-
-  const updateCollection = async (updatedCollection: Collection) => {
-      setError(null);
-      try {
-          await api.updateCollection(updatedCollection);
-          await refetchCollections();
-          showToast('Colección actualizada con éxito.', 'success');
-      } catch (e: any) {
-          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-          setError(message);
-          showToast(`Error al actualizar la colección: ${message}`, 'error');
-      }
-  };
-
-  const deleteCollection = async (collectionId: string) => {
-      setError(null);
-      try {
-          await api.deleteCollection(collectionId);
-          await Promise.all([refetchCollections(), refetchProducts()]);
-          showToast('Colección eliminada.', 'success');
-      } catch (e: any) {
-          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-          setError(message);
-          showToast(`Error al eliminar la colección: ${message}`, 'error');
-      }
-  };
-  
-  const deleteCustomer = async (customerId: string) => {
-    setError(null);
-    try {
-        await api.deleteCustomer(customerId);
-        setCustomers(prev => prev.filter(c => c.id !== customerId));
-    } catch (e: any) {
-        setError(e.message);
-    }
-  };
-  
-  const sendMessage = async (text: string, toId: string) => {
-    if (!user) return;
-    setError(null);
-    try {
-        const newMessage = await api.sendMessage(text, user.id, toId);
-        setMessages(prev => [...prev, newMessage]);
-    } catch (e: any) {
-        setError(e.message);
-    }
-  };
-
-  const markMessagesAsRead = async (fromId: string) => {
-    if (!user) return;
-    setError(null);
-    try {
-        await api.markMessagesAsRead(user.id, fromId);
-        setMessages(prev => prev.map(msg => (msg.toId === user?.id && msg.fromId === fromId && !msg.read) ? { ...msg, read: true } : msg));
-    } catch (e: any) {
-        setError(e.message);
-    }
-  };
-
-  const unreadMessagesCount = useMemo(() => {
-    if (!user) return 0;
-    return messages.filter(msg => msg.toId === user.id && !msg.read).length;
-  }, [messages, user]);
-
-  const getReviewsForProduct = useCallback(async (productId: string): Promise<Review[]> => {
-      setError(null);
-      try {
-          return await api.getReviewsForProduct(productId);
-      } catch (e: any) {
-          setError(e.message);
-          return [];
-      }
-  }, []);
-
-  const addProductReview = useCallback(async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
-    if (!user) {
-        return { success: false, message: 'Debes iniciar sesión para dejar una opinión.' };
-    }
-    setError(null);
-    try {
-        // The backend identifies the user from the token, so we don't need to pass user details here.
-        await api.addProductReview(productId, rating, comment);
-        await refetchProducts(); // Refetch all products to get updated ratings
-        return { success: true };
-    } catch (e: any) {
-        const message = e.message || 'Ocurrió un error desconocido.';
-        setError(message);
-        return { success: false, message };
-    }
-  }, [user, refetchProducts]);
-  
-  const checkIfUserPurchasedProduct = useCallback((productId: string): boolean => {
-      if (!user) return false;
-      return orders.some(order => 
-          order.status === 'Entregado' && order.items.some(item => String(item.id) === String(productId))
-      );
-  }, [user, orders]);
-  
-  const getProduct = useCallback(async (productId: string): Promise<Product | null> => {
-    setError(null);
-    try {
-        const productFromAll = allProducts.find(p => p.id === productId);
-        if (productFromAll) return productFromAll;
-
-        if (user?.role === 'admin') {
-            const productFromArchived = archivedProducts.find(p => p.id === productId);
-            if (productFromArchived) return productFromArchived;
+    };
+    
+    const updateProduct = async (updatedProduct: Product) => {
+        try {
+            const result = await api.updateProduct(updatedProduct);
+            const updateList = (list: Product[]) => list.map(p => p.id === result!.id ? result! : p);
+            setAllProducts(updateList);
+            setArchivedProducts(updateList);
+            addToast('Producto actualizado.', 'success');
+            await fetchData(); // Refresh all lists
+            await fetchAdminData();
+            return result;
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+            return null;
         }
-        
-        const product = await api.getProduct(productId);
-        return product || null;
-    } catch (e: any) {
-        console.error(`Failed to get product ${productId}:`, e.message);
-        return null;
-    }
-  }, [allProducts, archivedProducts, user]);
+    };
 
+    const archiveProduct = async (productId: string) => {
+        try {
+            await api.archiveProduct(productId);
+            setAllProducts(prev => prev.filter(p => p.id !== productId));
+            const archived = allProducts.find(p => p.id === productId);
+            if (archived) setArchivedProducts(prev => [archived, ...prev]);
+            addToast('Producto archivado.', 'success');
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
 
-  const value = {
-    isAuthenticated: !!user,
-    user,
-    token,
-    login,
-    register,
-    logout,
-    updateProfile,
-    changePassword,
-    cart,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    cartCount,
-    cartTotal,
-    searchQuery,
-    setSearchQuery,
-    searchResults,
-    orders,
-    getOrderDetail,
-    placeOrder,
-    cancelOrder,
-    updateOrderStatus,
-    allProducts,
-    archivedProducts,
-    collections,
-    addCollection,
-    updateCollection,
-    deleteCollection,
-    customers,
-    addProduct,
-    updateProduct,
-    archiveProduct,
-    deleteProductPermanently,
-    deleteCustomer,
-    messages,
-    sendMessage,
-    markMessagesAsRead,
-    unreadMessagesCount,
-    loading,
-    error,
-    getReviewsForProduct,
-    addProductReview,
-    checkIfUserPurchasedProduct,
-    toasts,
-    showToast,
-    removeToast,
-    getProduct,
-  };
+    const deleteProductPermanently = async (productId: string) => {
+        try {
+            await api.deleteProductPermanently(productId);
+            setArchivedProducts(prev => prev.filter(p => p.id !== productId));
+            setAllProducts(prev => prev.filter(p => p.id !== productId));
+            addToast('Producto eliminado.', 'success');
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+    // --- Collection Methods ---
+    const addCollection = async (collectionData: Omit<Collection, 'id'>) => {
+        try {
+            const newCollection = await api.addCollection(collectionData);
+            setCollections(prev => [...prev, newCollection].sort((a,b) => a.name.localeCompare(b.name)));
+            addToast('Colección añadida.', 'success');
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+    const updateCollection = async (updatedCollection: Collection) => {
+        try {
+            const result = await api.updateCollection(updatedCollection);
+            setCollections(prev => prev.map(c => c.id === result!.id ? result! : c));
+            addToast('Colección actualizada.', 'success');
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+    const deleteCollection = async (collectionId: string) => {
+        try {
+            await api.deleteCollection(collectionId);
+            setCollections(prev => prev.filter(c => c.id !== collectionId));
+            addToast('Colección eliminada.', 'success');
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+
+    // --- Cart Methods ---
+    const addToCart = useCallback((product: Product) => {
+        if (product.stock <= 0) {
+            addToast('Este producto está agotado.', 'error');
+            return;
+        }
+        setCart(prevCart => {
+            const existingItem = prevCart.find(item => item.id === product.id);
+            if (existingItem) {
+                 if (existingItem.quantity >= product.stock) {
+                    addToast('No hay más stock disponible para este producto.', 'info');
+                    return prevCart;
+                }
+                return prevCart.map(item =>
+                    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                );
+            }
+            return [...prevCart, { ...product, quantity: 1 }];
+        });
+        addToast(`${product.name} añadido al carrito.`, 'success');
+    }, [addToast]);
+
+    const removeFromCart = useCallback((productId: string) => {
+        setCart(prev => prev.filter(item => item.id !== productId));
+        addToast('Producto eliminado del carrito.', 'info');
+    }, [addToast]);
+
+    const updateQuantity = useCallback((productId: string, quantity: number) => {
+        if (quantity <= 0) {
+            removeFromCart(productId);
+            return;
+        }
+        setCart(prev => prev.map(item => {
+            if (item.id === productId) {
+                if (quantity > item.stock) {
+                    addToast(`Solo quedan ${item.stock} unidades de ${item.name}.`, 'info');
+                    return { ...item, quantity: item.stock };
+                }
+                return { ...item, quantity };
+            }
+            return item;
+        }));
+    }, [removeFromCart, addToast]);
+
+    const clearCart = useCallback(() => setCart([]), []);
+
+    // --- Order Methods ---
+    const placeOrder = useCallback(async (): Promise<boolean> => {
+        if (!user || cart.length === 0) {
+            addToast('El carrito está vacío o no has iniciado sesión.', 'error');
+            return false;
+        }
+        try {
+            const newOrder = await api.placeOrder(user.id, cart, user, cartTotal);
+            if (newOrder) {
+                addToast('¡Pedido realizado con éxito!', 'success');
+                setOrders(prev => [newOrder, ...prev]);
+                clearCart();
+                fetchData(); // Refresh product stock
+                return true;
+            }
+            return false;
+        } catch (e) {
+            addToast(`Error al realizar el pedido: ${(e as Error).message}`, 'error');
+            return false;
+        }
+    }, [user, cart, cartTotal, addToast, clearCart, fetchData]);
+    
+    const getOrderDetail = useCallback(async (orderId: string) => {
+        if (!user) return null;
+        return api.getOrderDetail(orderId, user.id, user.role);
+    }, [user]);
+    
+    const cancelOrder = async (orderId: string) => {
+        try {
+            await api.cancelOrder(orderId, user!.id);
+            setOrders(prev => prev.map(o => o.id === orderId ? {...o, status: 'Cancelado'} : o));
+            addToast('Pedido cancelado.', 'success');
+            fetchData();
+        } catch(e) {
+             addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+    const updateOrderStatus = async (orderId: string, status: Order['status']) => {
+        try {
+            await api.updateOrderStatus(orderId, status);
+            setOrders(prev => prev.map(o => o.id === orderId ? {...o, status} : o));
+            addToast('Estado del pedido actualizado.', 'success');
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+
+    const checkIfUserPurchasedProduct = (productId: string) => {
+        return orders.some(order => order.status === 'Entregado' && order.items.some(item => item.id === productId));
+    };
+
+    // --- Review Methods ---
+    const getReviewsForProduct = async (productId: string) => api.getReviewsForProduct(productId);
+    
+    const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
+        try {
+            await api.addProductReview(productId, user!.id, `${user!.firstName} ${user!.paternalLastName}`, rating, comment);
+            addToast('Opinión enviada. ¡Gracias!', 'success');
+            fetchData(); // Refresh average rating
+            return { success: true };
+        } catch(e) {
+            const err = e as Error;
+            addToast(`Error: ${err.message}`, 'error');
+            return { success: false, message: err.message };
+        }
+    };
+    
+    // --- Admin Methods ---
+    const deleteCustomer = async (customerId: string) => {
+         try {
+            await api.deleteCustomer(customerId);
+            setCustomers(prev => prev.filter(c => c.id !== customerId));
+            addToast('Cliente eliminado.', 'success');
+        } catch(e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+
+    // --- Message Methods ---
+    const sendMessage = async (text: string, toId: string) => {
+        try {
+            const newMessage = await api.sendMessage(text, user!.id, toId);
+            setMessages(prev => [...prev, newMessage]);
+        } catch(e) {
+             addToast(`Error enviando mensaje: ${(e as Error).message}`, 'error');
+        }
+    };
+    const markMessagesAsRead = useCallback(async (fromId: string) => {
+        try {
+            await api.markMessagesAsRead(user!.id, fromId);
+            setMessages(prev => prev.map(m => (m.toId === user!.id && m.fromId === fromId) ? {...m, read: true} : m));
+        } catch (e) {
+            // silent fail is ok here
+        }
+    }, [user]);
+
+    const value = {
+        user, isAuthenticated, login, register, logout, updateProfile, changePassword,
+        allProducts, archivedProducts, getProduct, addProduct, updateProduct, archiveProduct, deleteProductPermanently,
+        collections, addCollection, updateCollection, deleteCollection,
+        cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal,
+        orders, getOrderDetail, placeOrder, cancelOrder, updateOrderStatus, checkIfUserPurchasedProduct,
+        getReviewsForProduct, addProductReview,
+        customers, deleteCustomer,
+        messages, sendMessage, markMessagesAsRead, unreadMessagesCount,
+        searchQuery, setSearchQuery, searchResults,
+        loading, error, toasts, addToast, removeToast,
+    };
+
+    return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
 export const useAppContext = () => {
-  const context = React.useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppProvider');
-  }
-  return context;
+    const context = useContext(AppContext);
+    if (context === undefined) {
+        throw new Error('useAppContext must be used within an AppProvider');
+    }
+    return context;
 };

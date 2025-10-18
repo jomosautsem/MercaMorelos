@@ -1,7 +1,41 @@
+
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { protect, admin } = require('../middleware/authMiddleware');
+
+const getFullOrderQuery = `
+SELECT json_build_object(
+    'id', o.id,
+    'date', o.date,
+    'estimatedDeliveryDate', o."estimatedDeliveryDate",
+    'total', o.total::float,
+    'status', o.status,
+    'shippingInfo', o."shippingInfo",
+    'userId', o."userId",
+    'items', COALESCE(
+        (
+            SELECT json_agg(
+                json_build_object(
+                    'id', p.id,
+                    'name', p.name,
+                    'imageUrl', p."imageUrl",
+                    'category', p.category,
+                    'description', p.description,
+                    'stock', p.stock,
+                    'price', oi.price::float,
+                    'quantity', oi.quantity
+                )
+            )
+            FROM order_items oi
+            JOIN products p ON p.id = oi."productId"
+            WHERE oi."orderId" = o.id
+        ), '[]'::json
+    )
+) as order
+FROM orders o
+WHERE o.id = $1
+`;
 
 // @route   POST /api/orders
 // @desc    Create new order
@@ -64,35 +98,9 @@ router.post('/', protect, async (req, res) => {
         await client.query('COMMIT');
 
         // 4. Fetch the full order to return
-        const fullOrderResult = await client.query(
-            `SELECT json_build_object(
-                'id', o.id,
-                'date', o.date,
-                'estimatedDeliveryDate', o."estimatedDeliveryDate",
-                'total', o.total,
-                'status', o.status,
-                'shippingInfo', o."shippingInfo",
-                'items', (
-                    SELECT json_agg(
-                        json_build_object(
-                            'id', p.id,
-                            'name', p.name,
-                            'imageUrl', p."imageUrl",
-                            'price', oi.price,
-                            'quantity', oi.quantity
-                        )
-                    )
-                    FROM order_items oi
-                    JOIN products p ON p.id = oi."productId"
-                    WHERE oi."orderId" = o.id
-                )
-            ) as order_data
-            FROM orders o
-            WHERE o.id = $1`,
-            [newOrder.id]
-        );
+        const fullOrderResult = await client.query(getFullOrderQuery, [newOrder.id]);
         
-        res.status(201).json(fullOrderResult.rows[0].order_data);
+        res.status(201).json(fullOrderResult.rows[0].order);
 
     } catch (error) {
         await client.query('ROLLBACK');
@@ -110,35 +118,39 @@ router.post('/', protect, async (req, res) => {
 router.get('/myorders', protect, async (req, res) => {
     try {
         const ordersResult = await db.query(
-            `SELECT o.id, o.date, o."estimatedDeliveryDate", o.total, o.status, o."shippingInfo"
-             FROM orders o
-             WHERE o."userId" = $1
-             ORDER BY o.date DESC`,
+            `SELECT 
+                o.id, 
+                o.date, 
+                o."estimatedDeliveryDate", 
+                o.total::float, 
+                o.status, 
+                o."shippingInfo",
+                COALESCE(
+                    (
+                        SELECT json_agg(
+                            json_build_object(
+                                'id', p.id,
+                                'name', p.name,
+                                'imageUrl', p."imageUrl",
+                                'category', p.category,
+                                'description', p.description,
+                                'stock', p.stock,
+                                'price', oi.price::float,
+                                'quantity', oi.quantity,
+                                'isArchived', p."isArchived"
+                            )
+                        )
+                        FROM order_items oi
+                        JOIN products p ON p.id = oi."productId"
+                        WHERE oi."orderId" = o.id
+                    ), '[]'::json
+                ) as items
+            FROM orders o
+            WHERE o."userId" = $1
+            ORDER BY o.date DESC`,
             [req.user.id]
         );
-        
-        const orders = ordersResult.rows;
-
-        // For each order, fetch its items to provide full order data
-        for (const order of orders) {
-            const itemsResult = await db.query(
-                `SELECT 
-                    p.id, p.name, p."imageUrl", p.category, p.description, p.stock, p."isArchived",
-                    oi.price, oi.quantity
-                 FROM order_items oi
-                 JOIN products p ON p.id = oi."productId"
-                 WHERE oi."orderId" = $1`,
-                [order.id]
-            );
-            // The price from order_items is the price at the time of purchase.
-            // We map it to the 'price' field that the frontend CartItem expects.
-            order.items = itemsResult.rows.map(item => ({
-                ...item,
-                price: parseFloat(item.price),
-            }));
-        }
-
-        res.json(orders);
+        res.json(ordersResult.rows);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -150,50 +162,19 @@ router.get('/myorders', protect, async (req, res) => {
 // @access  Private
 router.get('/:id', protect, async (req, res) => {
     try {
-        const orderResult = await db.query(
-           `SELECT json_build_object(
-                'id', o.id,
-                'date', o.date,
-                'estimatedDeliveryDate', o."estimatedDeliveryDate",
-                'total', o.total,
-                'status', o.status,
-                'shippingInfo', o."shippingInfo",
-                'items', (
-                    SELECT json_agg(
-                        json_build_object(
-                            'id', p.id,
-                            'name', p.name,
-                            'imageUrl', p."imageUrl",
-                            'category', p.category,
-                            'description', p.description,
-                            'stock', p.stock,
-                            'price', oi.price,
-                            'quantity', oi.quantity
-                        )
-                    )
-                    FROM order_items oi
-                    JOIN products p ON p.id = oi."productId"
-                    WHERE oi."orderId" = o.id
-                )
-            ) as order
-            FROM orders o
-            WHERE o.id = $1`,
-            [req.params.id]
-        );
+        const orderResult = await db.query(getFullOrderQuery, [req.params.id]);
 
         if (orderResult.rows.length === 0) {
             return res.status(404).json({ msg: 'Order not found' });
         }
         
-        // Basic authorization: check if user is admin or the order owner
         const orderData = orderResult.rows[0].order;
-        const orderOwnerResult = await db.query('SELECT "userId" from orders WHERE id = $1', [req.params.id]);
-        const orderOwnerId = orderOwnerResult.rows[0].userId;
-
-        if (req.user.role !== 'admin' && orderOwnerId !== req.user.id) {
+        
+        if (req.user.role !== 'admin' && orderData.userId !== req.user.id) {
             return res.status(401).json({ msg: 'Not authorized to view this order' });
         }
-
+        
+        delete orderData.userId; // Don't expose userId to the client
         res.json(orderData);
     } catch (err) {
         console.error(err.message);
@@ -219,7 +200,7 @@ router.get('/', protect, admin, async (req, res) => {
         const orders = ordersResult.rows.map(order => ({
             id: order.id,
             date: order.date,
-            total: order.total,
+            total: parseFloat(order.total),
             status: order.status,
             shippingInfo: { // Mimic the old structure for the admin view
                 firstName: order.firstName,
@@ -240,15 +221,16 @@ router.get('/', protect, admin, async (req, res) => {
 router.put('/:id/status', protect, admin, async (req, res) => {
     try {
         const { status } = req.body;
-        const updatedOrder = await db.query(
+        const updatedOrderResult = await db.query(
             'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
             [status, req.params.id]
         );
 
-        if (updatedOrder.rows.length === 0) {
+        if (updatedOrderResult.rows.length === 0) {
             return res.status(404).json({ msg: 'Order not found' });
         }
-        res.json(updatedOrder.rows[0]);
+        const updatedOrder = updatedOrderResult.rows[0];
+        res.json({ ...updatedOrder, total: parseFloat(updatedOrder.total) });
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -275,7 +257,7 @@ router.put('/:id/cancel', protect, async (req, res) => {
             return res.status(400).json({ msg: 'Order can no longer be cancelled' });
         }
 
-        const updatedOrder = await client.query(
+        const updatedOrderResult = await client.query(
             "UPDATE orders SET status = 'Cancelado' WHERE id = $1 RETURNING *",
             [req.params.id]
         );
@@ -291,7 +273,8 @@ router.put('/:id/cancel', protect, async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json(updatedOrder.rows[0]);
+        const updatedOrder = updatedOrderResult.rows[0];
+        res.json({ ...updatedOrder, total: parseFloat(updatedOrder.total) });
 
     } catch (err) {
         await client.query('ROLLBACK');

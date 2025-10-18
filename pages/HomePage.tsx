@@ -80,7 +80,7 @@ const HomePage: React.FC = () => {
             <div className="text-center py-10 text-red-500 font-semibold">Error al cargar productos: {error}</div>
           ) : featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProducts.map(product => (
+              {featuredProducts.filter(p => p).map(product => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>

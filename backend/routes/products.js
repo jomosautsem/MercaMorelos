@@ -1,5 +1,4 @@
 
-
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -11,7 +10,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 router.get('/', async (req, res) => {
   try {
     // Join with reviews to calculate average rating and review count
-    const products = await db.query(`
+    const productsResult = await db.query(`
       SELECT 
         p.*, 
         COALESCE(r.avg_rating, 0) as "averageRating", 
@@ -28,7 +27,15 @@ router.get('/', async (req, res) => {
       WHERE p."isArchived" = false 
       ORDER BY p."createdAt" DESC
     `);
-    res.json(products.rows);
+
+    const products = productsResult.rows.map(p => ({
+        ...p,
+        price: parseFloat(p.price),
+        averageRating: parseFloat(p.averageRating),
+        reviewCount: parseInt(p.reviewCount, 10),
+    }));
+
+    res.json(products);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server Error' });
@@ -40,8 +47,12 @@ router.get('/', async (req, res) => {
 // @access  Private/Admin
 router.get('/archived', protect, admin, async (req, res) => {
   try {
-    const products = await db.query('SELECT * FROM products WHERE "isArchived" = true ORDER BY "createdAt" DESC');
-    res.json(products.rows);
+    const productsResult = await db.query('SELECT * FROM products WHERE "isArchived" = true ORDER BY "createdAt" DESC');
+    const products = productsResult.rows.map(p => ({
+        ...p,
+        price: parseFloat(p.price)
+    }));
+    res.json(products);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: 'Server Error' });
@@ -54,11 +65,12 @@ router.get('/archived', protect, admin, async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
     try {
-        const product = await db.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
-        if (product.rows.length === 0) {
+        const productResult = await db.query('SELECT * FROM products WHERE id = $1', [req.params.id]);
+        if (productResult.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });
         }
-        res.json(product.rows[0]);
+        const product = productResult.rows[0];
+        res.json({ ...product, price: parseFloat(product.price) });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: 'Server Error' });
@@ -73,11 +85,12 @@ router.post('/', protect, admin, async (req, res) => {
     try {
         const numericStock = Number(stock) || 0;
         const finalCollectionId = collectionId || null; // Treat empty string as NULL
-        const newProduct = await db.query(
+        const newProductResult = await db.query(
             'INSERT INTO products (name, price, "imageUrl", category, "collectionId", description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [name, price, imageUrl, category, finalCollectionId, description, numericStock, isArchived]
         );
-        res.status(201).json(newProduct.rows[0]);
+        const newProduct = newProductResult.rows[0];
+        res.status(201).json({ ...newProduct, price: parseFloat(newProduct.price) });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: 'Server Error' });
@@ -93,14 +106,15 @@ router.put('/:id', protect, admin, async (req, res) => {
         const numericStock = Number(stock) || 0;
         const finalCollectionId = collectionId || null; // Treat empty string as NULL
 
-        const updatedProduct = await db.query(
+        const updatedProductResult = await db.query(
             'UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, "collectionId" = $5, description = $6, stock = $7, "isArchived" = $8 WHERE id = $9 RETURNING *',
             [name, price, imageUrl, category, finalCollectionId, description, numericStock, isArchived, req.params.id]
         );
-        if (updatedProduct.rows.length === 0) {
+        if (updatedProductResult.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });
         }
-        res.json(updatedProduct.rows[0]);
+        const updatedProduct = updatedProductResult.rows[0];
+        res.json({ ...updatedProduct, price: parseFloat(updatedProduct.price) });
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: 'Server Error' });
