@@ -1,5 +1,5 @@
-import { apiClient } from './apiClient';
+import { mockApi } from './mockApi';
 
-// By exporting the apiClient, the entire application will now use the live backend
-// for all data operations instead of the local mock data.
-export const api = apiClient;
+// The application is configured to run with mock data, so no backend is required.
+// All API calls are directed to the mockApi service.
+export const api = mockApi;
