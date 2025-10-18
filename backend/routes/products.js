@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -89,8 +90,17 @@ router.post('/', protect, admin, async (req, res) => {
             'INSERT INTO products (name, price, "imageUrl", category, "collectionId", description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
             [name, price, imageUrl, category, finalCollectionId, description, numericStock, isArchived]
         );
-        const newProduct = newProductResult.rows[0];
-        res.status(201).json({ ...newProduct, price: parseFloat(newProduct.price) });
+        
+        // FIX: Ensure the returned object has the same shape as the GET endpoint.
+        // A new product has no reviews, so its rating is 0.
+        const newProduct = {
+            ...newProductResult.rows[0],
+            price: parseFloat(newProductResult.rows[0].price),
+            averageRating: 0,
+            reviewCount: 0
+        };
+
+        res.status(201).json(newProduct);
     } catch (err) {
         console.error(err.message);
         res.status(500).json({ message: 'Server Error' });

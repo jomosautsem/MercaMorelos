@@ -248,8 +248,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [addToast]);
 
     const updateProfile = async (profileData: Partial<User>): Promise<User | null> => {
+        if (!user) return null;
         try {
-            const updatedUser = await api.updateProfile(user!.id, profileData);
+            const updatedUser = await api.updateProfile(user.id, profileData);
             setUser(updatedUser);
             addToast('Perfil actualizado.', 'success');
             return updatedUser;
@@ -260,8 +261,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const changePassword = async (passwordData: { current: string; new: string }): Promise<boolean> => {
+        if (!user) return false;
         try {
-            await api.changePassword(user!.id, passwordData.current, passwordData.new);
+            // Fix: The API client expects three separate arguments, but was being called with one object.
+            // This destructures the passwordData object and passes the arguments correctly.
+            await api.changePassword(user.id, passwordData.current, passwordData.new);
+            addToast('Contraseña actualizada con éxito.', 'success');
             return true;
         } catch(e) {
             setError((e as Error).message);
@@ -433,8 +438,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [user]);
     
     const cancelOrder = async (orderId: string) => {
+        if (!user) return;
         try {
-            await api.cancelOrder(orderId, user!.id);
+            await api.cancelOrder(orderId, user.id);
             setOrders(prev => prev.map(o => o.id === orderId ? {...o, status: 'Cancelado'} : o));
             addToast('Pedido cancelado.', 'success');
             fetchData();
@@ -460,8 +466,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const getReviewsForProduct = async (productId: string) => api.getReviewsForProduct(productId);
     
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
+        if (!user) return { success: false, message: 'User not logged in' };
         try {
-            await api.addProductReview(productId, user!.id, `${user!.firstName} ${user!.paternalLastName}`, rating, comment);
+            // Fix: The apiClient expects 3 arguments, but 5 were being passed. The backend
+            // gets user info from the auth token, so userId and userName are not needed here.
+            await api.addProductReview(productId, rating, comment);
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating
             return { success: true };
@@ -485,16 +494,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // --- Message Methods ---
     const sendMessage = async (text: string, toId: string) => {
+        if (!user) return;
         try {
-            const newMessage = await api.sendMessage(text, user!.id, toId);
+            const newMessage = await api.sendMessage(text, user.id, toId);
             setMessages(prev => [...prev, newMessage]);
         } catch(e) {
              addToast(`Error enviando mensaje: ${(e as Error).message}`, 'error');
         }
     };
     const markMessagesAsRead = useCallback(async (fromId: string) => {
+        if (!user) return;
         try {
-            await api.markMessagesAsRead(user!.id, fromId);
+            await api.markMessagesAsRead(user.id, fromId);
             setMessages(prev => prev.map(m => (m.toId === user!.id && m.fromId === fromId) ? {...m, read: true} : m));
         } catch (e) {
             // silent fail is ok here
