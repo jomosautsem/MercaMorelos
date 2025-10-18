@@ -37,6 +37,12 @@ interface AppContextType {
   cartCount: number;
   cartTotal: number;
 
+  // Wishlist
+  wishlist: Product[];
+  addToWishlist: (productId: string) => Promise<void>;
+  removeFromWishlist: (productId: string) => Promise<void>;
+  isProductInWishlist: (productId: string) => boolean;
+
   // Orders
   orders: Order[];
   getOrderDetail: (orderId: string) => Promise<Order | null>;
@@ -84,6 +90,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const [orders, setOrders] = useState<Order[]>([]);
     const [customers, setCustomers] = useState<User[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
+    const [wishlist, setWishlist] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -157,13 +164,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (!isAuthenticated || !user) {
             setOrders([]);
             setMessages([]);
+            setWishlist([]);
             return;
         }
         try {
             if (user.role === 'customer') {
-                const [userOrders, userMessages] = await Promise.all([api.getMyOrders(user.id), api.getMessages(user.id)]);
+                const [userOrders, userMessages, userWishlist] = await Promise.all([api.getMyOrders(user.id), api.getMessages(user.id), api.getWishlist(user.id)]);
                 setOrders(userOrders);
                 setMessages(userMessages);
+                setWishlist(userWishlist);
             } else if (user.role === 'admin') {
                 const allMessages = await api.getMessages(user.id);
                 setMessages(allMessages);
@@ -244,6 +253,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUser(null);
         setIsAuthenticated(false);
         setCart([]);
+        setWishlist([]);
         addToast('Has cerrado sesión.', 'info');
     }, [addToast]);
 
@@ -428,6 +438,39 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const clearCart = useCallback(() => setCart([]), []);
 
+    // --- Wishlist Methods ---
+    const isProductInWishlist = useCallback((productId: string) => {
+        return wishlist.some(item => item.id === productId);
+    }, [wishlist]);
+
+    const addToWishlist = async (productId: string) => {
+        if (!user) {
+            addToast('Debes iniciar sesión para añadir a tu lista de deseos.', 'info');
+            return;
+        }
+        try {
+            await api.addToWishlist(user.id, productId);
+            const productToAdd = allProducts.find(p => p.id === productId);
+            if (productToAdd && !isProductInWishlist(productId)) {
+                setWishlist(prev => [...prev, productToAdd]);
+                addToast('Añadido a la lista de deseos.', 'success');
+            }
+        } catch (e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+
+    const removeFromWishlist = async (productId: string) => {
+        if (!user) return;
+        try {
+            await api.removeFromWishlist(user.id, productId);
+            setWishlist(prev => prev.filter(item => item.id !== productId));
+            addToast('Eliminado de la lista de deseos.', 'info');
+        } catch (e) {
+            addToast(`Error: ${(e as Error).message}`, 'error');
+        }
+    };
+
     // --- Order Methods ---
     const placeOrder = useCallback(async (): Promise<boolean> => {
         if (!user || cart.length === 0) {
@@ -486,12 +529,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-// BUG: The user reported an error "Expected 1 arguments, but got 3" on this line.
-// This is likely a misreported error for the `changePassword` function, as this call
-// correctly matches the `apiClient` signature. However, to resolve the user's issue,
-// and given the inconsistent argument patterns, this call is modified to pass an object.
-// This requires a corresponding change in `services/apiClient.ts`.
-            await api.addProductReview(productId, rating, comment);
+// FIX: The call is modified to pass a single object to match the updated apiClient signature, resolving the "Expected 1 arguments, but got 3" error.
+            await api.addProductReview({productId, rating, comment});
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating
             return { success: true };
@@ -538,6 +577,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         allProducts, archivedProducts, getProduct, addProduct, updateProduct, archiveProduct, deleteProductPermanently,
         collections, addCollection, updateCollection, deleteCollection,
         cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal,
+        wishlist, addToWishlist, removeFromWishlist, isProductInWishlist,
         orders, getOrderDetail, placeOrder, cancelOrder, updateOrderStatus, checkIfUserPurchasedProduct,
         getReviewsForProduct, addProductReview,
         customers, deleteCustomer,

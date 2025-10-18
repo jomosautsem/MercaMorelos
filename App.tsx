@@ -31,6 +31,7 @@ import AdminArchivedProductsPage from './pages/admin/AdminArchivedProductsPage';
 import { WhatsAppIcon } from './components/icons';
 import AdminCollectionsPage from './pages/admin/AdminCollectionsPage';
 import CollectionFormPage from './pages/admin/CollectionFormPage';
+import WishlistPage from './pages/WishlistPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -144,6 +145,7 @@ const AppRoutes: React.FC = () => {
               <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
 
               {/* Protected Customer Routes */}
+              <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/confirmation" element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><OrderHistoryPage /></ProtectedRoute>} />

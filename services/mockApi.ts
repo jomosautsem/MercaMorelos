@@ -235,6 +235,11 @@ let mockReviews: Review[] = [
     },
 ];
 
+let mockUserWishlist: { [userId: string]: Set<string> } = {
+    'customer-1': new Set(['3', '5']), // Customer Juan Perez likes Jeans and the Dinosaur T-shirt
+};
+
+
 const getProductRatings = (productId: string) => {
     const reviewsForProduct = mockReviews.filter(r => r.productId === productId);
     const reviewCount = reviewsForProduct.length;
@@ -251,6 +256,32 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Mock API functions
 export const mockApi = {
+    // WISHLIST
+    async getWishlist(userId: string): Promise<Product[]> {
+        await delay(300);
+        const wishlistPids = mockUserWishlist[userId] || new Set();
+        const wishlistProducts = mockProducts.filter(p => wishlistPids.has(p.id));
+        return wishlistProducts.map(p => ({
+            ...p,
+            ...getProductRatings(p.id)
+        }));
+    },
+    async addToWishlist(userId: string, productId: string): Promise<boolean> {
+        await delay(200);
+        if (!mockUserWishlist[userId]) {
+            mockUserWishlist[userId] = new Set();
+        }
+        mockUserWishlist[userId].add(productId);
+        return true;
+    },
+    async removeFromWishlist(userId: string, productId: string): Promise<boolean> {
+        await delay(200);
+        if (mockUserWishlist[userId]) {
+            mockUserWishlist[userId].delete(productId);
+        }
+        return true;
+    },
+    
     // COLLECTIONS
     async getCollections(): Promise<Collection[]> {
       await delay(200);

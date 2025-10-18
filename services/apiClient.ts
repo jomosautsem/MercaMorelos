@@ -75,6 +75,19 @@ export const apiClient = {
         return true;
     },
 
+    // WISHLIST
+    async getWishlist(userId: string): Promise<Product[]> { // userId for compatibility
+        return apiFetch('/users/wishlist');
+    },
+    async addToWishlist(userId: string, productId: string): Promise<boolean> { // userId for compatibility
+        await apiFetch('/users/wishlist', { method: 'POST', body: JSON.stringify({ productId }) });
+        return true;
+    },
+    async removeFromWishlist(userId: string, productId: string): Promise<boolean> { // userId for compatibility
+        await apiFetch(`/users/wishlist/${productId}`, { method: 'DELETE' });
+        return true;
+    },
+
     // AUTH
     async login(email: string, pass: string): Promise<{user: User, token: string} | null> {
         const response = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pass }) });
@@ -142,7 +155,9 @@ export const apiClient = {
     async getReviewsForProduct(productId: string): Promise<Review[]> {
         return apiFetch(`/products/${productId}/reviews`);
     },
-    async addProductReview(productId: string, rating: number, comment: string): Promise<Review> { // userId, userName for compatibility
+    // FIX: Changed to accept a single object argument to match the fix in AppContext.tsx and resolve the "Expected 1 arguments, but got 3" error.
+    async addProductReview(reviewData: { productId: string, rating: number, comment: string }): Promise<Review> { // userId, userName for compatibility
+        const { productId, rating, comment } = reviewData;
         return apiFetch(`/products/${productId}/reviews`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
     },
 };

@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Product, Review } from '../types';
 import { useAppContext } from '../context/AppContext';
 import StarRating from '../components/StarRating';
+import { HeartIcon } from '../components/icons';
 
 const ReviewForm: React.FC<{ productId: string, onSubmit: () => void }> = ({ productId, onSubmit }) => {
     const [rating, setRating] = useState(0);
@@ -59,7 +60,7 @@ const ReviewForm: React.FC<{ productId: string, onSubmit: () => void }> = ({ pro
 
 const ProductDetailPage: React.FC = () => {
   const { productId } = useParams<{ productId: string }>();
-  const { addToCart, cart, getReviewsForProduct, isAuthenticated, checkIfUserPurchasedProduct, user, getProduct } = useAppContext();
+  const { addToCart, cart, getReviewsForProduct, isAuthenticated, checkIfUserPurchasedProduct, user, getProduct, isProductInWishlist, addToWishlist, removeFromWishlist } = useAppContext();
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,6 +120,17 @@ const ProductDetailPage: React.FC = () => {
   const isOutOfStock = product ? product.stock <= quantityInCart : true;
   const userCanReview = isAuthenticated && checkIfUserPurchasedProduct(productId || '');
   const hasUserReviewed = reviews.some(review => review.userId === user?.id);
+  
+  const inWishlist = isProductInWishlist(productId || '');
+
+  const handleWishlistClick = () => {
+    if (!productId || !user) return;
+    if (inWishlist) {
+        removeFromWishlist(productId);
+    } else {
+        addToWishlist(productId);
+    }
+  };
 
   if (loading && !product) {
     return <div className="text-center py-20">Cargando producto...</div>;
@@ -161,13 +173,24 @@ const ProductDetailPage: React.FC = () => {
             </div>
             
             {user?.role !== 'admin' && (
-              <button 
-                onClick={() => addToCart(product)}
-                disabled={isOutOfStock}
-                className="w-full sm:w-auto bg-primary text-slate-900 font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40"
-              >
-                {isOutOfStock ? (product.stock === 0 ? 'AGOTADO' : 'Stock máximo en carrito') : 'Añadir al carrito'}
-              </button>
+              <div className="flex items-center space-x-4">
+                <button 
+                  onClick={() => addToCart(product)}
+                  disabled={isOutOfStock}
+                  className="w-full sm:w-auto bg-primary text-slate-900 font-bold py-4 px-10 rounded-full hover:bg-primary-focus focus:outline-none focus:ring-4 focus:ring-primary/50 transition-all duration-300 transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed disabled:scale-100 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40"
+                >
+                  {isOutOfStock ? (product.stock === 0 ? 'AGOTADO' : 'Stock máximo en carrito') : 'Añadir al carrito'}
+                </button>
+                {isAuthenticated && (
+                    <button
+                        onClick={handleWishlistClick}
+                        className="p-4 rounded-full bg-surface-light hover:bg-surface-light/50 text-on-surface-secondary hover:text-secondary-focus transition-all duration-300 border border-border-color shadow-sm"
+                        aria-label={inWishlist ? "Quitar de la lista de deseos" : "Añadir a la lista de deseos"}
+                    >
+                        <HeartIcon filled={inWishlist} className={`w-6 h-6 ${inWishlist ? 'text-secondary' : ''}`} />
+                    </button>
+                )}
+              </div>
             )}
           </div>
         </div>

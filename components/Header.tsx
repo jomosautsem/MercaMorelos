@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
-import { UserIcon, ShoppingCartIcon, LogoutIcon, SearchIcon, ChevronDownIcon, ArchiveBoxIcon, EnvelopeIcon, Cog6ToothIcon, MenuIcon, XIcon } from './icons';
+import { UserIcon, ShoppingCartIcon, LogoutIcon, SearchIcon, ChevronDownIcon, ArchiveBoxIcon, EnvelopeIcon, Cog6ToothIcon, MenuIcon, XIcon, HeartIcon } from './icons';
 
 const Header: React.FC = () => {
-  const { cartCount, isAuthenticated, logout, user, setSearchQuery, unreadMessagesCount } = useAppContext();
+  const { cartCount, isAuthenticated, logout, user, setSearchQuery, unreadMessagesCount, wishlist } = useAppContext();
   const navigate = useNavigate();
   const [localQuery, setLocalQuery] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -132,6 +132,10 @@ const Header: React.FC = () => {
                                   <Cog6ToothIcon className="mr-3"/>
                                   Mi Perfil
                               </Link>
+                              <Link to="/wishlist" onClick={() => setIsDropdownOpen(false)} className="text-on-surface-secondary flex items-center px-4 py-2 text-sm hover:bg-surface-light hover:text-on-surface" role="menuitem">
+                                  <HeartIcon className="mr-3 w-5 h-5"/>
+                                  Mi Lista de Deseos
+                              </Link>
                               <Link to="/orders" onClick={() => setIsDropdownOpen(false)} className="text-on-surface-secondary flex items-center px-4 py-2 text-sm hover:bg-surface-light hover:text-on-surface" role="menuitem">
                                   <ArchiveBoxIcon className="mr-3"/>
                                   Mis Pedidos
@@ -156,14 +160,24 @@ const Header: React.FC = () => {
               {user?.role !== 'admin' && (
                   <>
                     {user?.role === 'customer' && (
-                      <Link to="/messages" className="relative p-2 rounded-full hover:bg-orange-400/50 text-slate-800" aria-label="Messages">
-                        <EnvelopeIcon />
-                        {unreadMessagesCount > 0 && (
-                            <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-secondary text-white text-xs flex items-center justify-center transform translate-x-1/4 -translate-y-1/4 font-bold">
-                            {unreadMessagesCount}
-                            </span>
-                        )}
-                      </Link>
+                      <>
+                        <Link to="/messages" className="relative p-2 rounded-full hover:bg-orange-400/50 text-slate-800" aria-label="Messages">
+                            <EnvelopeIcon />
+                            {unreadMessagesCount > 0 && (
+                                <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-secondary text-white text-xs flex items-center justify-center transform translate-x-1/4 -translate-y-1/4 font-bold">
+                                {unreadMessagesCount}
+                                </span>
+                            )}
+                        </Link>
+                        <Link to="/wishlist" className="relative p-2 rounded-full hover:bg-orange-400/50 text-slate-800" aria-label="Wishlist">
+                            <HeartIcon />
+                            {wishlist.length > 0 && (
+                                <span className="absolute top-0 right-0 block h-5 w-5 rounded-full bg-secondary text-white text-xs flex items-center justify-center transform translate-x-1/2 -translate-y-1/2 font-bold">
+                                {wishlist.length}
+                                </span>
+                            )}
+                        </Link>
+                      </>
                     )}
                     <Link to="/cart" className="relative p-2 rounded-full hover:bg-orange-400/50 text-slate-800" aria-label="Carrito de compras">
                       <ShoppingCartIcon />
@@ -229,6 +243,9 @@ const Header: React.FC = () => {
                   <>
                     <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center px-4 py-3 rounded-md text-base font-medium text-on-surface hover:bg-surface-light">
                       <Cog6ToothIcon className="mr-3"/> Mi Perfil
+                    </Link>
+                    <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center px-4 py-3 rounded-md text-base font-medium text-on-surface hover:bg-surface-light">
+                      <HeartIcon className="mr-3 w-5 h-5"/> Mi Lista de Deseos
                     </Link>
                     <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center px-4 py-3 rounded-md text-base font-medium text-on-surface hover:bg-surface-light">
                       <ArchiveBoxIcon className="mr-3"/> Mis Pedidos
