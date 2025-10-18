@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../context/AppContext';
@@ -67,10 +68,6 @@ const ProductFormPage: React.FC = () => {
             alert('Por favor, sube una imagen para el producto.');
             return;
         }
-         if (!formData.collectionId) {
-            alert('Por favor, selecciona una colección para el producto.');
-            return;
-        }
         setIsLoading(true);
         
         const stockValue = parseInt(String(formData.stock), 10) || 0;
@@ -128,7 +125,7 @@ const ProductFormPage: React.FC = () => {
                         </div>
                         <div>
                             <label htmlFor="collectionId" className="block text-sm font-medium text-on-surface-secondary">Colección</label>
-                            <select name="collectionId" id="collectionId" value={formData.collectionId} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-border-color bg-surface text-on-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" disabled={collections.length === 0}>
+                            <select name="collectionId" id="collectionId" value={formData.collectionId} onChange={handleChange} className="mt-1 block w-full px-3 py-2 border border-border-color bg-surface text-on-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" disabled={collections.length === 0}>
                                 <option value="">-- Selecciona una colección --</option>
                                 {collections.map(collection => (
                                     <option key={collection.id} value={collection.id}>{collection.name}</option>

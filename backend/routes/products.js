@@ -1,3 +1,5 @@
+
+
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -67,12 +69,13 @@ router.get('/:id', async (req, res) => {
 // @desc    Create a product
 // @access  Private/Admin
 router.post('/', protect, admin, async (req, res) => {
-    const { name, price, imageUrl, category, collectionId, description, stock } = req.body;
+    const { name, price, imageUrl, category, collectionId, description, stock, isArchived = false } = req.body;
     try {
         const numericStock = Number(stock) || 0;
+        const finalCollectionId = collectionId || null; // Treat empty string as NULL
         const newProduct = await db.query(
             'INSERT INTO products (name, price, "imageUrl", category, "collectionId", description, stock, "isArchived") VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-            [name, price, imageUrl, category, collectionId, description, numericStock, false]
+            [name, price, imageUrl, category, finalCollectionId, description, numericStock, isArchived]
         );
         res.status(201).json(newProduct.rows[0]);
     } catch (err) {
@@ -82,18 +85,17 @@ router.post('/', protect, admin, async (req, res) => {
 });
 
 // @route   PUT /api/products/:id
-// @desc    Update a product. If stock is added, it will be un-archived.
+// @desc    Update a product.
 // @access  Private/Admin
 router.put('/:id', protect, admin, async (req, res) => {
-    const { name, price, imageUrl, category, collectionId, description, stock } = req.body;
+    const { name, price, imageUrl, category, collectionId, description, stock, isArchived } = req.body;
     try {
         const numericStock = Number(stock) || 0;
+        const finalCollectionId = collectionId || null; // Treat empty string as NULL
 
         const updatedProduct = await db.query(
-            `UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, "collectionId" = $5, description = $6, stock = $7, 
-             "isArchived" = (CASE WHEN $7 > 0 THEN false ELSE "isArchived" END) 
-             WHERE id = $8 RETURNING *`,
-            [name, price, imageUrl, category, collectionId, description, numericStock, req.params.id]
+            'UPDATE products SET name = $1, price = $2, "imageUrl" = $3, category = $4, "collectionId" = $5, description = $6, stock = $7, "isArchived" = $8 WHERE id = $9 RETURNING *',
+            [name, price, imageUrl, category, finalCollectionId, description, numericStock, isArchived, req.params.id]
         );
         if (updatedProduct.rows.length === 0) {
             return res.status(404).json({ msg: 'Product not found' });

@@ -35,7 +35,7 @@ interface AppContextType {
   updateCollection: (collection: Collection) => Promise<void>;
   deleteCollection: (collectionId: string) => Promise<void>;
   customers: User[];
-  addProduct: (product: Omit<Product, 'id'>) => Promise<void>;
+  addProduct: (product: Omit<Product, 'id' | 'isArchived'> & { isArchived: boolean }) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   archiveProduct: (productId: string) => Promise<void>;
   deleteProductPermanently: (productId: string) => Promise<void>;
@@ -396,23 +396,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const addProduct = async (productData: Omit<Product, 'id'>) => {
+  const addProduct = async (productData: Omit<Product, 'id' | 'isArchived'> & { isArchived: boolean }) => {
     setError(null);
     try {
-        await api.addProduct(productData);
-        await refetchProducts();
+      const newProduct = await api.addProduct(productData);
+      setAllProducts(prev => [newProduct, ...prev]);
+      showToast('Producto creado con éxito.', 'success');
     } catch (e: any) {
-        setError(e.message);
+      const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+      setError(message);
+      showToast(`Error al crear el producto: ${message}`, 'error');
     }
   };
 
   const updateProduct = async (updatedProduct: Product) => {
     setError(null);
     try {
-        await api.updateProduct(updatedProduct);
-        await refetchProducts();
+        const returnedProduct = await api.updateProduct(updatedProduct);
+        if (returnedProduct) {
+            // After an update, the safest way to ensure UI consistency 
+            // (especially if the archived status changes) is to refetch.
+            await refetchProducts();
+            showToast('Producto actualizado con éxito.', 'success');
+        }
     } catch (e: any) {
-        setError(e.message);
+        const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+        setError(message);
+        showToast(`Error al actualizar el producto: ${message}`, 'error');
     }
   };
 
@@ -421,6 +431,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.archiveProduct(productId);
       await refetchProducts();
+      showToast('Producto archivado con éxito.', 'success');
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
@@ -433,6 +444,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.deleteProductPermanently(productId);
       await refetchProducts();
+       showToast('Producto eliminado permanentemente.', 'success');
     } catch (e: any) {
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
       setError(errorMessage);
@@ -445,8 +457,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
           await api.addCollection(collectionData);
           await refetchCollections();
+          showToast('Colección creada con éxito.', 'success');
       } catch (e: any) {
-          setError(e.message);
+          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+          setError(message);
+          showToast(`Error al crear la colección: ${message}`, 'error');
       }
   };
 
@@ -455,8 +470,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
           await api.updateCollection(updatedCollection);
           await refetchCollections();
+          showToast('Colección actualizada con éxito.', 'success');
       } catch (e: any) {
-          setError(e.message);
+          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+          setError(message);
+          showToast(`Error al actualizar la colección: ${message}`, 'error');
       }
   };
 
@@ -465,8 +483,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
           await api.deleteCollection(collectionId);
           await Promise.all([refetchCollections(), refetchProducts()]);
+          showToast('Colección eliminada.', 'success');
       } catch (e: any) {
-          setError(e.message);
+          const message = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+          setError(message);
+          showToast(`Error al eliminar la colección: ${message}`, 'error');
       }
   };
   
