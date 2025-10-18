@@ -1,5 +1,5 @@
-import { mockApi } from './mockApi';
+import { apiClient } from './apiClient';
 
-// The application is configured to run with mock data, so no backend is required.
-// All API calls are directed to the mockApi service.
-export const api = mockApi;
+// The application is now configured to run with the live backend.
+// All API calls are directed to the apiClient service.
+export const api = apiClient;

@@ -193,9 +193,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return loggedInUser;
       }
       setError('Credenciales incorrectas.');
+      showToast('Credenciales incorrectas.', 'error');
       return null;
     } catch (e: any) {
       setError(e.message);
+      showToast(e.message, 'error');
       return null;
     }
   };
@@ -213,9 +215,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return newUser;
        }
        setError('El correo electrónico ya está en uso.');
+       showToast('El correo electrónico ya está en uso.', 'error');
        return null;
     } catch (e: any) {
       setError(e.message);
+      showToast(e.message, 'error');
       return null;
     }
   };
@@ -244,6 +248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return updatedUser;
     } catch(e: any) {
       setError(e.message);
+      showToast(e.message, 'error');
       return null;
     }
   };
@@ -256,6 +261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return true;
       } catch (e: any) {
           setError(e.message);
+          showToast(e.message, 'error');
           return false;
       }
   };
@@ -361,7 +367,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!user) return null;
     setError(null);
     try {
-        return await api.getOrderDetail(orderId, user.id, user.role);
+        return await api.getOrderDetail(orderId);
     } catch (e: any) {
         setError(e.message);
         return null;
@@ -517,7 +523,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setError(null);
     try {
-        await api.addProductReview(productId, user.id, `${user.firstName} ${user.paternalLastName}`, rating, comment);
+        // The backend identifies the user from the token, so we don't need to pass user details here.
+        await api.addProductReview(productId, rating, comment);
         await refetchProducts(); // Refetch all products to get updated ratings
         return { success: true };
     } catch (e: any) {

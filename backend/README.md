@@ -6,21 +6,26 @@ This is the Node.js, Express, and PostgreSQL backend for the MercaMorelos e-comm
 
 ### 1. Environment Variables
 
-Create a `.env` file in the root of this backend directory and add the following content. The `DATABASE_URL` is pre-filled with the Supabase instance you provided.
+Create a `.env` file in this backend directory (`/backend/.env`) and add the following content, using the Supabase connection URL you provided.
 
-```
-DATABASE_URL=postgresql://postgres:j5s82QSM.@db.ijgnbcpbejvnjfygnexy.supabase.co:5432/postgres
-JWT_SECRET=your_super_secret_jwt_key_that_is_long_and_random
+**Important:** This file is critical for the backend to connect to the database.
+
+```env
+# Use the Supabase Connection Pooler URL for your application
+DATABASE_URL="postgresql://postgres.ijgnbcpbejvnjfygnexy:j5s82QSM.@aws-1-us-east-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
+
+# Use the long, random JWT secret you provided
+JWT_SECRET="nV/weyUAKcx/nKa71get6UmbK/EL7PKV9h/9vbcQ6whbUv+zsK72VBhSt6/kbz9hjPkdY033gqC0Km34yUkoAw=="
+
+# The port on which your backend server will run
 PORT=4000
 ```
 
-**Important:** Change `JWT_SECRET` to your own long, random, and secret string.
-
 ### 2. Database Initialization
 
-Connect to your PostgreSQL database using a client like `psql` or a GUI tool (e.g., pgAdmin, DBeaver).
+Connect to your PostgreSQL database using a client like `psql` or a GUI tool (e.g., pgAdmin, DBeaver, or the Supabase SQL Editor).
 
-You will need to run an `init.sql` script to create all the necessary tables (`users`, `products`, `orders`, etc.). Copy the entire content of `init.sql` and execute it. **This will erase existing data.**
+You will need to run an `init.sql` script to create all the necessary tables (`users`, `products`, `orders`, etc.). If you have an `init.sql` file, copy its entire content and execute it. **This will erase existing data in the tables it modifies.**
 
 ### 3. Install Dependencies
 
@@ -32,16 +37,16 @@ npm install
 
 ### 4. Run the Server
 
-To start the server in development mode (with automatic reloading on file changes), run:
+You can now run the server from the **root directory of the project** using the new helper scripts:
 
+To start in development mode (with automatic reloading):
 ```bash
-npm run dev
+npm run server:dev
 ```
 
-To start the server for production, run:
-
+To start for production:
 ```bash
-npm start
+npm run server:start
 ```
 
 The server will be running on the port specified in your `.env` file (e.g., `http://localhost:4000`). Your React frontend will now be able to communicate with this API.
