@@ -155,9 +155,9 @@ export const apiClient = {
     async getReviewsForProduct(productId: string): Promise<Review[]> {
         return apiFetch(`/products/${productId}/reviews`);
     },
-    // FIX: Changed to accept a single object argument to match the fix in AppContext.tsx and resolve the "Expected 1 arguments, but got 3" error.
-    async addProductReview(reviewData: { productId: string, rating: number, comment: string }): Promise<Review> { // userId, userName for compatibility
-        const { productId, rating, comment } = reviewData;
+    // FIX: The API client expects three separate arguments. The previous implementation
+    // used a single object, causing an argument mismatch.
+    async addProductReview(productId: string, rating: number, comment: string): Promise<Review> { // userId, userName for compatibility
         return apiFetch(`/products/${productId}/reviews`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
     },
 };

@@ -1,4 +1,5 @@
 
+
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
@@ -93,5 +94,80 @@ router.delete('/:id', protect, admin, async (req, res) => {
         res.status(500).send('Server Error');
     }
 });
+
+// --- WISHLIST ROUTES ---
+
+// @route   GET /api/users/wishlist
+// @desc    Get user's wishlist
+// @access  Private
+router.get('/wishlist', protect, async (req, res) => {
+    try {
+        const wishlistProductsResult = await db.query(
+            `SELECT 
+                p.*,
+                COALESCE(r.avg_rating, 0) as "averageRating", 
+                COALESCE(r.review_count, 0) as "reviewCount"
+             FROM products p
+             JOIN wishlist w ON p.id = w."productId"
+             LEFT JOIN (
+                SELECT 
+                  "productId", 
+                  AVG(rating) as avg_rating, 
+                  COUNT(id) as review_count 
+                FROM reviews 
+                GROUP BY "productId"
+             ) r ON p.id = r."productId"
+             WHERE w."userId" = $1 AND p."isArchived" = false`,
+            [req.user.id]
+        );
+        
+        const products = wishlistProductsResult.rows.map(p => ({
+            ...p,
+            price: parseFloat(p.price),
+            averageRating: parseFloat(p.averageRating),
+            reviewCount: parseInt(p.reviewCount, 10),
+        }));
+
+        res.json(products);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   POST /api/users/wishlist
+// @desc    Add product to wishlist
+// @access  Private
+router.post('/wishlist', protect, async (req, res) => {
+    const { productId } = req.body;
+    try {
+        // Use ON CONFLICT to prevent duplicate entries
+        await db.query(
+            'INSERT INTO wishlist ("userId", "productId") VALUES ($1, $2) ON CONFLICT ("userId", "productId") DO NOTHING',
+            [req.user.id, productId]
+        );
+        res.status(201).json({ msg: 'Product added to wishlist' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+// @route   DELETE /api/users/wishlist/:productId
+// @desc    Remove product from wishlist
+// @access  Private
+router.delete('/wishlist/:productId', protect, async (req, res) => {
+    try {
+        await db.query(
+            'DELETE FROM wishlist WHERE "userId" = $1 AND "productId" = $2',
+            [req.user.id, req.params.productId]
+        );
+        res.json({ msg: 'Product removed from wishlist' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 
 module.exports = router;

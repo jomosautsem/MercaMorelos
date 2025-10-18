@@ -55,7 +55,14 @@ const ProductFormPage: React.FC = () => {
             processedValue = value === '' ? '' : Number(value);
         }
 
-        setFormData(prev => ({ ...prev, [name]: processedValue }));
+        setFormData(prev => {
+            const newState = { ...prev, [name]: processedValue };
+            // If category changes, reset collectionId to avoid mismatches
+            if (name === 'category') {
+                newState.collectionId = '';
+            }
+            return newState;
+        });
     };
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -151,7 +158,8 @@ const ProductFormPage: React.FC = () => {
                             <label htmlFor="category" className="block text-sm font-medium text-on-surface-secondary">Categoría Principal</label>
                             <select name="category" id="category" value={formData.category} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-border-color bg-surface text-on-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                                 <option value="dama">Dama</option>
-                                <option value="nino">Niño</option>
+                                <option value="kids">Kids</option>
+                                <option value="caballero">Caballero</option>
                             </select>
                         </div>
                          <div>

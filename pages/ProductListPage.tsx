@@ -4,7 +4,7 @@ import ProductCard from '../components/ProductCard';
 import { useAppContext } from '../context/AppContext';
 
 const ProductListPage: React.FC = () => {
-  const { categoryId, collectionId } = useParams<{ categoryId?: 'dama' | 'nino', collectionId?: string }>();
+  const { categoryId, collectionId } = useParams<{ categoryId?: 'dama' | 'kids' | 'caballero', collectionId?: string }>();
   const { allProducts, collections, loading, error } = useAppContext();
   
   const products = useMemo(() => {
@@ -22,7 +22,12 @@ const ProductListPage: React.FC = () => {
         return collections.find(c => c.id === collectionId)?.name || 'Colección';
     }
     if (categoryId) {
-        return categoryId === 'dama' ? 'Ropa de Dama' : 'Ropa de Niño';
+        switch (categoryId) {
+            case 'dama': return 'Ropa de Dama';
+            case 'kids': return 'Ropa de Kids';
+            case 'caballero': return 'Ropa de Caballero';
+            default: return 'Productos';
+        }
     }
     return 'Productos';
   }, [collectionId, categoryId, collections]);

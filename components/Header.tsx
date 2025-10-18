@@ -72,10 +72,16 @@ const Header: React.FC = () => {
                     Dama
                   </NavLink>
                   <NavLink 
-                    to="/category/nino" 
+                    to="/category/kids" 
                     className={navLinkClass}
                   >
-                    Niño
+                    Kids
+                  </NavLink>
+                  <NavLink 
+                    to="/category/caballero" 
+                    className={navLinkClass}
+                  >
+                    Caballero
                   </NavLink>
                   {user?.role === 'admin' && (
                     <NavLink
@@ -229,7 +235,8 @@ const Header: React.FC = () => {
           
           <nav className="p-4 space-y-2">
             <NavLink to="/category/dama" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Dama</NavLink>
-            <NavLink to="/category/nino" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Niño</NavLink>
+            <NavLink to="/category/kids" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Kids</NavLink>
+            <NavLink to="/category/caballero" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Caballero</NavLink>
             
             {user?.role === 'admin' && (
               <NavLink to="/admin" className={mobileNavLinkClass} onClick={() => setIsMobileMenuOpen(false)}>Panel de Admin</NavLink>

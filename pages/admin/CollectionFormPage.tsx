@@ -63,7 +63,8 @@ const CollectionFormPage: React.FC = () => {
                             <label htmlFor="parentCategory" className="block text-sm font-medium text-on-surface-secondary">Categoría Principal</label>
                             <select name="parentCategory" id="parentCategory" value={formData.parentCategory} onChange={handleChange} required className="mt-1 block w-full px-3 py-2 border border-border-color bg-surface text-on-surface rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary">
                                 <option value="dama">Dama</option>
-                                <option value="nino">Niño</option>
+                                <option value="kids">Kids</option>
+                                <option value="caballero">Caballero</option>
                             </select>
                         </div>
                     </div>

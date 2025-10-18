@@ -12,7 +12,7 @@ export interface Collection {
   id: string;
   name: string;
   icon: string;
-  parentCategory: 'dama' | 'nino';
+  parentCategory: 'dama' | 'kids' | 'caballero';
 }
 
 export interface Product {
@@ -20,7 +20,7 @@ export interface Product {
   name: string;
   price: number;
   imageUrl: string;
-  category: 'dama' | 'nino';
+  category: 'dama' | 'kids' | 'caballero';
   collectionId: string; // Link to a Collection
   description: string;
   stock: number;
