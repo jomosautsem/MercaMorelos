@@ -60,24 +60,24 @@ self.addEventListener('fetch', event => {
     return;
   }
   
-  // Strategy for API calls: Stale-While-Revalidate
-  // Serve from cache immediately if available, then update the cache from the network.
+  // Strategy for API calls: Network First, falling back to Cache.
+  // This ensures data is always fresh when online.
   if (url.origin === self.location.origin && url.pathname.startsWith('/api/')) {
     event.respondWith(
-      caches.open(DYNAMIC_CACHE).then(cache => {
-        return cache.match(event.request).then(response => {
-          const fetchPromise = fetch(event.request).then(networkResponse => {
+      fetch(event.request)
+        .then(networkResponse => {
+          // If the fetch is successful, update the cache and return the response
+          return caches.open(DYNAMIC_CACHE).then(cache => {
             if (networkResponse.ok) {
               cache.put(event.request, networkResponse.clone());
             }
             return networkResponse;
-          }).catch(err => {
-              // If network fails, still return the cached response if available
-              if(response) return response;
           });
-          return response || fetchPromise;
-        });
-      })
+        })
+        .catch(() => {
+          // If the network fails, try to serve the response from the cache
+          return caches.match(event.request);
+        })
     );
   } 
   // Strategy for other requests (app shell, images, scripts, etc.): Cache First, then Network

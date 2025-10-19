@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { Product, User, CartItem, Order, Message, ToastMessage, Review, Collection } from '../types';
 import { api } from '../services/api';
@@ -313,8 +314,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             const newProduct = await api.addProduct(productData);
             if (newProduct) {
-                // Refetch to ensure data consistency (e.g., calculated ratings)
-                await fetchData();
+                // Instead of refetching, add the new product to the state directly.
+                // This is faster and avoids potential caching issues.
+                setAllProducts(prev => [newProduct, ...prev]);
                 addToast('Producto añadido.', 'success');
                 return true;
             }
@@ -530,10 +532,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            // FIX: The API client was being called with three arguments, but the error "Expected 1 arguments, but got 3"
-            // indicates that it expects a single object. This call is now corrected to pass a single object.
-            // This assumes the type definitions for the API client are out of sync with the runtime implementation.
-            await (api.addProductReview as any)({ productId, rating, comment });
+            // FIX: The call to `api.addProductReview` was passing three separate arguments,
+            // but for consistency it should pass a single object.
+            await api.addProductReview({ productId, rating, comment });
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating
             return { success: true };
