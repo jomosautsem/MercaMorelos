@@ -56,7 +56,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="bg-orange-300/75 sticky top-0 z-40 shadow-md backdrop-blur-lg border-b border-white/20">
+      <header className="bg-surface/75 sticky top-0 z-40 shadow-md backdrop-blur-lg border-b border-border-color">
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center">

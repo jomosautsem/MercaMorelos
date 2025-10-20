@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { Product, User, CartItem, Order, Message, ToastMessage, Review, Collection } from '../types';
 import { api } from '../services/api';
@@ -532,7 +533,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            // Fix: The api.addProductReview function was being called with three arguments, but it expects a single object.
+            // FIX: The api.addProductReview function was being called with three arguments, but it expects a single object.
             await api.addProductReview({ productId, rating, comment });
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating

@@ -9,7 +9,8 @@ const ProductListPage: React.FC = () => {
   
   const products = useMemo(() => {
       if (collectionId) {
-          return allProducts.filter(p => p.collectionId === collectionId);
+          // Robustly compare by casting both values to strings to prevent type mismatches.
+          return allProducts.filter(p => String(p.collectionId) === String(collectionId));
       }
       if (categoryId) {
           return allProducts.filter(p => p.category === categoryId);
