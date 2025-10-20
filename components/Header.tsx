@@ -56,7 +56,7 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="bg-orange-300 sticky top-0 z-40 shadow-md">
+      <header className="bg-orange-300/75 sticky top-0 z-40 shadow-md backdrop-blur-lg border-b border-white/20">
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center">
@@ -130,7 +130,7 @@ const Header: React.FC = () => {
                       <ChevronDownIcon className="w-4 h-4 hidden sm:inline-block"/>
                     </button>
                     {isDropdownOpen && (
-                      <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-surface ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical">
+                      <div className="origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-surface/80 backdrop-blur-lg ring-1 ring-black ring-opacity-5 focus:outline-none" role="menu" aria-orientation="vertical">
                         <div className="py-1" role="none">
                         {user?.role === 'customer' && (
                             <>
@@ -221,7 +221,7 @@ const Header: React.FC = () => {
           aria-label="Cerrar menú"
         ></div>
         
-        <div className={`fixed top-0 right-0 h-full w-full max-w-sm bg-surface shadow-xl transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className={`fixed top-0 right-0 h-full w-full max-w-sm bg-surface/80 backdrop-blur-xl shadow-xl transform transition-transform duration-300 ease-in-out ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="flex items-center justify-between p-4 border-b border-border-color">
             <h2 className="text-xl font-bold text-primary-focus">Menú</h2>
             <button 
