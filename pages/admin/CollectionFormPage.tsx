@@ -6,7 +6,7 @@ import { Collection } from '../../types';
 const CollectionFormPage: React.FC = () => {
     const { collectionId } = useParams<{ collectionId: string }>();
     const navigate = useNavigate();
-    const { collections, addCollection, updateCollection } = useAppContext();
+    const { collections, addCollection, updateCollection, addToast } = useAppContext();
     const isEditing = !!collectionId;
     const [isLoading, setIsLoading] = useState(false);
     
@@ -18,14 +18,18 @@ const CollectionFormPage: React.FC = () => {
 
     useEffect(() => {
         if (isEditing) {
+            // Wait for collections to be loaded from context before searching
+            if (collections.length === 0) return;
+
             const collectionToEdit = collections.find(c => c.id === collectionId);
             if (collectionToEdit) {
                 setFormData(collectionToEdit);
             } else {
+                addToast('Colección no encontrada.', 'error');
                 navigate('/admin/collections');
             }
         }
-    }, [isEditing, collectionId, collections, navigate]);
+    }, [isEditing, collectionId, collections, navigate, addToast]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
