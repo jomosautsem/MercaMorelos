@@ -21,7 +21,7 @@ const CollectionFormPage: React.FC = () => {
             // Wait for collections to be loaded from context before searching
             if (collections.length === 0) return;
 
-            const collectionToEdit = collections.find(c => c.id === collectionId);
+            const collectionToEdit = collections.find(c => String(c.id) === collectionId);
             if (collectionToEdit) {
                 setFormData(collectionToEdit);
             } else {
