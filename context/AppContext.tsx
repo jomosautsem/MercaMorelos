@@ -121,10 +121,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, []);
 
     const addToast = useCallback((message: string, type: ToastMessage['type']) => {
-        const id = Date.now();
-        setToasts(prev => [...prev, { id, message, type }]);
-        setTimeout(() => removeToast(id), 5000);
-    }, [removeToast]);
+        setToasts(prevToasts => {
+            // Prevent duplicate toasts from being added.
+            if (prevToasts.some(t => t.message === message)) {
+                return prevToasts;
+            }
+            const id = Date.now();
+            return [...prevToasts, { id, message, type }];
+        });
+    }, []);
 
     // --- Data Fetching ---
     const fetchData = useCallback(async () => {
@@ -531,9 +536,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            // FIX: The API client was being called with an object instead of separate arguments.
-            // This updates the call to pass arguments individually, resolving the "Expected 1 arguments, but got 3" error.
-            await api.addProductReview(productId, rating, comment);
+            // FIX: The API client expects a single object argument, but was being called with three.
+            // This updates the call to pass a single object, resolving the "Expected 1 arguments, but got 3" error.
+            await api.addProductReview({ productId, rating, comment });
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating
             return { success: true };

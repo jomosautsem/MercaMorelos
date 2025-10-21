@@ -44,7 +44,7 @@ const AdminProductsPage: React.FC = () => {
                     </thead>
                     <tbody>
                         {allProducts.filter(p => p).map(product => (
-                            <tr key={product.id} className="border-b border-border-color hover:bg-surface-light">
+                            <tr key={product.id} className={`border-b border-border-color hover:bg-surface-light transition-colors ${product.stock === 0 ? 'bg-red-50 hover:bg-red-100' : ''}`}>
                                 <td className="px-6 py-4">
                                     <img src={product.imageUrl} alt={product.name} className="w-12 h-12 object-cover rounded"/>
                                 </td>
@@ -54,7 +54,7 @@ const AdminProductsPage: React.FC = () => {
                                     </Link>
                                 </th>
                                 <td className="px-6 py-4">${product.price.toFixed(2)}</td>
-                                <td className="px-6 py-4">{product.stock}</td>
+                                <td className={`px-6 py-4 ${product.stock === 0 ? 'text-red-600 font-bold' : ''}`}>{product.stock}</td>
                                 <td className="px-6 py-4 capitalize">{product.category}</td>
                                 <td className="px-6 py-4 flex items-center space-x-3">
                                     <Link to={`/admin/products/edit/${product.id}`} className="font-medium text-primary-focus hover:underline">Editar</Link>

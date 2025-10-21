@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 // Fix: Corrected import path for AppContext
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -32,6 +32,7 @@ import { WhatsAppIcon } from './components/icons';
 import AdminCollectionsPage from './pages/admin/AdminCollectionsPage';
 import CollectionFormPage from './pages/admin/CollectionFormPage';
 import WishlistPage from './pages/WishlistPage';
+import type { ToastMessage } from './types';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -67,19 +68,33 @@ const ToastIcon: React.FC<{ type: 'success' | 'error' | 'info' }> = ({ type }) =
     }
 }
 
+const ToastItem: React.FC<{ toast: ToastMessage, onRemove: (id: number) => void }> = ({ toast, onRemove }) => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            onRemove(toast.id);
+        }, 5000);
+
+        return () => clearTimeout(timer);
+    }, [toast.id, onRemove]);
+
+    return (
+        <div className="w-full max-w-xs p-4 text-on-surface-secondary bg-surface rounded-lg shadow-lg flex items-center space-x-3" role="alert" style={{ animation: 'fade-in-down 0.5s' }}>
+            <ToastIcon type={toast.type} />
+            <div className="text-sm font-normal flex-1">{toast.message}</div>
+            <button type="button" className="-mx-1.5 -my-1.5 bg-surface text-on-surface-secondary hover:text-on-surface rounded-lg p-1.5 hover:bg-surface-light inline-flex h-8 w-8" aria-label="Close" onClick={() => onRemove(toast.id)}>
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+            </button>
+        </div>
+    );
+};
+
 const ToastContainer: React.FC = () => {
     const { toasts, removeToast } = useAppContext();
 
     return (
         <div className="fixed top-24 right-4 z-50 space-y-3 w-full max-w-xs">
             {toasts.map(toast => (
-                <div key={toast.id} className="w-full max-w-xs p-4 text-on-surface-secondary bg-surface rounded-lg shadow-lg flex items-center space-x-3" role="alert" style={{ animation: 'fade-in-down 0.5s' }}>
-                    <ToastIcon type={toast.type} />
-                    <div className="text-sm font-normal flex-1">{toast.message}</div>
-                    <button type="button" className="-mx-1.5 -my-1.5 bg-surface text-on-surface-secondary hover:text-on-surface rounded-lg p-1.5 hover:bg-surface-light inline-flex h-8 w-8" aria-label="Close" onClick={() => removeToast(toast.id)}>
-                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
-                    </button>
-                </div>
+                <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
             ))}
         </div>
     );
