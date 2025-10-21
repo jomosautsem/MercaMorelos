@@ -1,4 +1,5 @@
 
+
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
@@ -77,17 +78,17 @@ const CategoryCarousel: React.FC = () => {
           
           <div
             ref={scrollContainerRef}
-            className="flex items-center space-x-4 overflow-x-auto py-4 scrollbar-hide"
+            className="grid grid-flow-col grid-rows-2 gap-4 overflow-x-auto py-4 scrollbar-hide"
           >
             {collections.map((category) => (
               <Link
                 key={category.id}
                 to={`/collection/${category.id}`}
-                className="flex-shrink-0 flex flex-col items-center justify-center w-40 h-40 md:w-48 md:h-48 bg-surface-light rounded-2xl group/item hover:bg-primary/20 transition-all duration-300 transform hover:-translate-y-1 border border-transparent hover:border-primary/30 shadow-lg"
+                className="flex flex-col items-center justify-center w-32 h-32 md:w-36 md:h-36 bg-surface-light rounded-2xl group/item hover:bg-primary/20 transition-all duration-300 transform hover:-translate-y-1 border border-transparent hover:border-primary/30 shadow-lg"
                 aria-label={`Ver categoría ${category.name}`}
               >
-                <span className="text-5xl md:text-6xl mb-4 drop-shadow-sm">{category.icon}</span>
-                <span className="text-sm md:text-base font-semibold text-on-surface-secondary group-hover/item:text-primary-focus transition-colors text-center px-2">
+                <span className="text-4xl md:text-5xl mb-2 drop-shadow-sm">{category.icon}</span>
+                <span className="text-xs md:text-sm font-semibold text-on-surface-secondary group-hover/item:text-primary-focus transition-colors text-center px-2">
                   {category.name}
                 </span>
               </Link>
