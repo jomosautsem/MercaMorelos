@@ -57,9 +57,9 @@ const HomePage: React.FC = () => {
     <>
       <Carousel slides={mainCarouselSlides} />
 
-      {/* Category Carousel with a lighter background */}
-      <div className="bg-surface-light border-b border-border-color">
-          <CategoryCarousel />
+      {/* Gradient section for Category Carousel */}
+      <div className="bg-gradient-to-b from-primary via-amber-200 to-background">
+        <CategoryCarousel />
       </div>
 
       {/* Featured Products Section */}

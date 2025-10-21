@@ -155,8 +155,9 @@ export const apiClient = {
     async getReviewsForProduct(productId: string): Promise<Review[]> {
         return apiFetch(`/products/${productId}/reviews`);
     },
-    // FIX: The function signature was changed to accept three separate arguments instead of a single object. This resolves an argument mismatch error and aligns the function's calling convention with others in the API client, improving consistency.
-    async addProductReview(productId: string, rating: number, comment: string): Promise<Review> {
+    // FIX: The function signature was changed to accept a single object to resolve an "Expected 1 arguments, but got 3" error.
+    async addProductReview(reviewData: { productId: string; rating: number; comment: string }): Promise<Review> {
+        const { productId, rating, comment } = reviewData;
         return apiFetch(`/products/${productId}/reviews`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
     },
 };

@@ -1,7 +1,3 @@
-
-
-
-
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { Product, User, CartItem, Order, Message, ToastMessage, Review, Collection } from '../types';
 import { api } from '../services/api';
@@ -535,8 +531,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            // FIX: Based on the error "Expected 1 arguments, but got 3", the API client likely expects 3 separate arguments, not a single object. This aligns with other API functions.
-            await api.addProductReview(productId, rating, comment);
+            // FIX: Based on the error "Expected 1 arguments, but got 3", the API client call is updated to pass a single object argument.
+            await api.addProductReview({ productId, rating, comment });
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating
             return { success: true };
