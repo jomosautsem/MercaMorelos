@@ -536,8 +536,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            // FIX: The API client expects a single object argument, but was being called with three.
-            // This updates the call to pass a single object, resolving the "Expected 1 arguments, but got 3" error.
+            // Fix: The api.addProductReview function expects a single object argument.
+            // The call was updated to pass an object instead of three separate arguments to resolve the error.
             await api.addProductReview({ productId, rating, comment });
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating
