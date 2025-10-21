@@ -1,6 +1,7 @@
 
 
 
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { Product, User, CartItem, Order, Message, ToastMessage, Review, Collection } from '../types';
 import { api } from '../services/api';
@@ -180,7 +181,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 const allMessages = await api.getMessages(user.id);
                 setMessages(allMessages);
             }
-        } catch (e) {
+        } catch (e)
+{
             addToast(`Error al cargar tus datos: ${(e as Error).message}`, 'error');
         }
     }, [isAuthenticated, user, addToast]);
@@ -533,8 +535,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            // FIX: The api.addProductReview function was being called with three arguments, but it expects a single object.
-            await api.addProductReview({ productId, rating, comment });
+            // FIX: Based on the error "Expected 1 arguments, but got 3", the API client likely expects 3 separate arguments, not a single object. This aligns with other API functions.
+            await api.addProductReview(productId, rating, comment);
             addToast('Opinión enviada. ¡Gracias!', 'success');
             fetchData(); // Refresh average rating
             return { success: true };
