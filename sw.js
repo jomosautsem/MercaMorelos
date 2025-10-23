@@ -1,8 +1,8 @@
 // Import Dexie for IndexedDB access
 importScripts('https://unpkg.com/dexie@3/dist/dexie.js');
 
-const STATIC_CACHE = 'mercamorelos-static-v1';
-const DYNAMIC_CACHE = 'mercamorelos-dynamic-v1';
+const STATIC_CACHE = 'mercamorelos-static-v2';
+const DYNAMIC_CACHE = 'mercamorelos-dynamic-v2';
 const API_BASE_URL = '/api'; // Use a relative path to support proxying
 
 // Assets that form the "app shell" and are cached on install
