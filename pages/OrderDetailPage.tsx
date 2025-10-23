@@ -132,12 +132,21 @@ const OrderDetailPage: React.FC = () => {
                                     {order.status}
                                 </span>
                             </div>
-                            <div className="flex justify-between items-center pt-2">
-                                <span className="text-on-surface-secondary">Entrega Estimada</span>
-                                <span className="text-sm font-medium text-on-surface text-right">
-                                    {new Date(order.estimatedDeliveryDate).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                                </span>
-                            </div>
+                            {order.status === 'Entregado' && order.deliveryDate ? (
+                                <div className="flex justify-between items-center pt-2">
+                                    <span className="text-on-surface-secondary">Fecha de Entrega</span>
+                                    <span className="text-sm font-medium text-on-surface text-right">
+                                        {new Date(order.deliveryDate).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="flex justify-between items-center pt-2">
+                                    <span className="text-on-surface-secondary">Entrega Estimada</span>
+                                    <span className="text-sm font-medium text-on-surface text-right">
+                                        {new Date(order.estimatedDeliveryDate).toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                    </span>
+                                </div>
+                            )}
                          </div>
                          {order.status === 'Procesando' && (
                              <div className="mt-6">

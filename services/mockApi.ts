@@ -212,6 +212,7 @@ let mockOrders: Order[] = [
         id: 'order-2',
         date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
         estimatedDeliveryDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        deliveryDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         total: 55.00,
         status: 'Entregado',
         items: [
@@ -223,6 +224,7 @@ let mockOrders: Order[] = [
         id: 'order-3',
         date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
         estimatedDeliveryDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+        deliveryDate: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
         total: 49.99,
         status: 'Entregado',
         items: [
@@ -481,6 +483,9 @@ export const mockApi = {
         const order = mockOrders.find(o => o.id === orderId);
         if (order) {
             order.status = status;
+            if (status === 'Entregado') {
+                order.deliveryDate = new Date().toISOString();
+            }
             return true;
         }
         return false;

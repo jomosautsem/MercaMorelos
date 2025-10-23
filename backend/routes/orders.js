@@ -10,6 +10,7 @@ SELECT json_build_object(
     'id', o.id,
     'date', o.date,
     'estimatedDeliveryDate', o."estimatedDeliveryDate",
+    'deliveryDate', o."deliveryDate",
     'total', o.total::float,
     'status', o.status,
     'shippingInfo', o."shippingInfo",
@@ -123,6 +124,7 @@ router.get('/myorders', protect, async (req, res) => {
                 o.id, 
                 o.date, 
                 o."estimatedDeliveryDate", 
+                o."deliveryDate",
                 o.total::float, 
                 o.status, 
                 o."shippingInfo",
@@ -222,10 +224,18 @@ router.get('/', protect, admin, async (req, res) => {
 router.put('/:id/status', protect, admin, async (req, res) => {
     try {
         const { status } = req.body;
-        const updatedOrderResult = await db.query(
-            'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
-            [status, req.params.id]
-        );
+        let query;
+        let queryParams;
+
+        if (status === 'Entregado') {
+            query = 'UPDATE orders SET status = $1, "deliveryDate" = NOW() WHERE id = $2 RETURNING *';
+            queryParams = [status, req.params.id];
+        } else {
+            query = 'UPDATE orders SET status = $1, "deliveryDate" = NULL WHERE id = $2 RETURNING *';
+            queryParams = [status, req.params.id];
+        }
+
+        const updatedOrderResult = await db.query(query, queryParams);
 
         if (updatedOrderResult.rows.length === 0) {
             return res.status(404).json({ msg: 'Order not found' });

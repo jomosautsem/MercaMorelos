@@ -47,6 +47,7 @@ export interface Order {
     id: string;
     date: string;
     estimatedDeliveryDate: string;
+    deliveryDate?: string;
     total: number;
     status: 'Procesando' | 'Enviado' | 'Entregado' | 'Cancelado';
     items: CartItem[];
