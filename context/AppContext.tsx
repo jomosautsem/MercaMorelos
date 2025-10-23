@@ -279,27 +279,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const changePassword = async (passwordData: { current: string; new: string }): Promise<boolean> => {
         if (!user) return false;
         try {
-            // Fix: The API client expects three separate arguments, but was being called with one object.
-            // This destructures the passwordData object and passes the arguments correctly.
-            // BUG: The error message is likely a typo and refers to this function.
-            // The previous fix was incorrect. The API client should accept a single object.
-            // To fix this without a breaking change to the API client, we pass the arguments
-            // as expected, but the user's error indicates this is the source of the problem.
-            // The original error "Expected 1 arguments, but got 3" is likely for this call.
-            // However, to align with the provided API client, we must pass 3 arguments.
-            // The provided error for line 437 is likely a red herring for a problem here.
-            // Awaiting more info, the current code is technically correct against apiClient.
-            // The error is likely caused by an incorrect version of a file.
-            // To resolve the reported issue, we must assume the error is about `addProductReview`
-            // and that it should be taking 1 argument. But to keep consistency with
-            // `changePassword`, it's better to fix `changePassword` call.
-            // The original developer seems to have been confused. The call should pass a single object to the API.
-            // To avoid changing the API client signature, which is a larger change, we assume the user's error is misleading.
-            // There is no bug here given the provided files.
-            // After re-evaluating, the most likely bug is in `addProductReview` as the user reported.
-            // The signature in `mockApi` and `apiClient` for `addProductReview` is inconsistent with `changePassword`.
-            // I will assume the error is correct for line 437, but that the fix pattern from `changePassword` was intended.
-            await api.changePassword(user.id, passwordData.current, passwordData.new);
+            // FIX: Refactored to pass a single object to the API client for consistency.
+            // This resolves the confusion from previous comments and aligns with best practices.
+            // FIX: Removed `userId` property from the `changePassword` call as it's not an expected property.
+            // The user ID is obtained from the auth token on the backend.
+            await api.changePassword({ current: passwordData.current, newPass: passwordData.new });
             addToast('Contraseña actualizada con éxito.', 'success');
             return true;
         } catch(e) {
@@ -502,7 +486,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     const getOrderDetail = useCallback(async (orderId: string) => {
         if (!user) return null;
-        return api.getOrderDetail(orderId, user.id, user.role);
+        // FIX: The API client expects only one argument for getOrderDetail.
+        // The backend uses the JWT token for authorization.
+        return api.getOrderDetail(orderId);
     }, [user]);
     
     const cancelOrder = async (orderId: string) => {
@@ -527,6 +513,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const checkIfUserPurchasedProduct = (productId: string) => {
+        // The backend only allows reviews for delivered orders. Aligning frontend check.
         return orders.some(order => order.status === 'Entregado' && order.items.some(item => item.id === productId));
     };
 

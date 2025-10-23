@@ -135,7 +135,8 @@ export const apiClient = {
     async updateProfile(userId: string, profileData: Partial<User>): Promise<User> { // userId for compatibility
         return apiFetch('/users/profile', { method: 'PUT', body: JSON.stringify(profileData) });
     },
-    async changePassword(userId: string, current: string, newPass: string): Promise<{ msg: string }> { // userId for compatibility
+    // FIX: Refactored to accept a single object argument for better consistency.
+    async changePassword({ current, newPass }: { current: string, newPass: string }): Promise<{ msg: string }> {
         return apiFetch('/users/password', { method: 'PUT', body: JSON.stringify({ currentPassword: current, newPassword: newPass }) });
     },
 

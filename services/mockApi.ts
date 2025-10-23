@@ -599,13 +599,15 @@ export const mockApi = {
         await delay(300);
         return mockReviews.filter(r => r.productId === productId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     },
-    async addProductReview(productId: string, userId: string, userName: string, rating: number, comment: string): Promise<Review> {
+    async addProductReview({ productId, rating, comment }: { productId: string; rating: number; comment: string; }): Promise<Review> {
         await delay(500);
+        // Since mock has no logged-in user context, we'll use mockCustomer for the review.
+        const user = mockCustomer;
         const newReview: Review = {
             id: `review-${Date.now()}`,
             productId,
-            userId,
-            userName,
+            userId: user.id,
+            userName: `${user.firstName} ${user.paternalLastName}`,
             rating,
             comment,
             date: new Date().toISOString(),
