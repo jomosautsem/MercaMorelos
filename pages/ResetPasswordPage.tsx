@@ -1,15 +1,22 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
-const ResetPasswordPage: React.FC = () => {
-    const { token } = useParams<{ token: string }>();
-    const { resetPassword } = useAppContext();
+const UpdatePasswordPage: React.FC = () => {
+    const { updateUserPassword, isAuthenticated, logout } = useAppContext();
     const navigate = useNavigate();
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        // This page should only be accessible when the user is in a 'password recovery' state.
+        // The `isAuthenticated` flag from context will be true in this specific case.
+        if (!isAuthenticated) {
+            navigate('/auth');
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -21,19 +28,17 @@ const ResetPasswordPage: React.FC = () => {
             setError('Las contraseñas no coinciden.');
             return;
         }
-        if (!token) {
-             setError('Token de restablecimiento no válido o faltante.');
-             return;
-        }
         setError('');
         setIsLoading(true);
-        const success = await resetPassword(token, password);
-        if (success) {
-            navigate('/auth'); // Redirect to login, success toast will show
-        } else {
+        const { error: updateError } = await updateUserPassword(password);
+        if (updateError) {
             setError('El enlace de restablecimiento no es válido o ha expirado. Por favor, solicita uno nuevo.');
+            setIsLoading(false);
+        } else {
+            // Password updated successfully. Log the user out so they can log in with the new password.
+            await logout();
+            navigate('/auth');
         }
-        setIsLoading(false);
     };
 
     return (
@@ -72,7 +77,7 @@ const ResetPasswordPage: React.FC = () => {
                             disabled={isLoading}
                             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-slate-900 bg-primary hover:bg-primary-focus focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-surface focus:ring-primary disabled:bg-gray-400 shadow-primary/30 hover:shadow-lg hover:shadow-primary/40"
                         >
-                            {isLoading ? 'Guardando...' : 'Restablecer Contraseña'}
+                            {isLoading ? 'Guardando...' : 'Establecer Nueva Contraseña'}
                         </button>
                     </div>
                 </form>
@@ -81,4 +86,4 @@ const ResetPasswordPage: React.FC = () => {
     );
 };
 
-export default ResetPasswordPage;
+export default UpdatePasswordPage;

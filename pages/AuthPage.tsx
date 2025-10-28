@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
@@ -59,39 +60,35 @@ const AuthPage: React.FC = () => {
     setIsLoading(true);
 
     if (isRegistering) {
-      if (formData.password !== formData.confirmPassword) {
-        setError('Las contraseñas no coinciden.');
-        setIsLoading(false);
-        return;
-      }
-      
-      // ONLINE REGISTRATION LOGIC
-      const newUser = await register({
-        firstName: formData.firstName,
-        paternalLastName: formData.paternalLastName,
-        maternalLastName: formData.maternalLastName,
-        email: formData.email,
-        address: formData.address,
-        password: formData.password,
-      });
-      if (newUser) {
-        const from = location.state?.from?.pathname || '/';
-        navigate(from === '/auth' ? '/' : from);
-      } else {
-        setError('El correo electrónico ya está en uso o hubo un error.');
-      }
-    } else { // Login logic
-      const loggedInUser = await login(formData.email, formData.password);
-      if (loggedInUser) {
-        if (loggedInUser.role === 'admin') {
-            navigate('/admin');
-        } else {
-            const from = location.state?.from?.pathname || '/';
-            navigate(from === '/auth' ? '/' : from);
+        if (formData.password !== formData.confirmPassword) {
+            setError('Las contraseñas no coinciden.');
+            setIsLoading(false);
+            return;
         }
-      } else {
-        setError('Correo electrónico o contraseña incorrectos.');
-      }
+
+        const result = await register({
+            firstName: formData.firstName,
+            paternalLastName: formData.paternalLastName,
+            maternalLastName: formData.maternalLastName,
+            email: formData.email,
+            address: formData.address,
+            password: formData.password,
+        });
+        
+        if (result.success) {
+            setInfoMessage(result.message);
+            setFormData(initialFormData);
+            setIsRegistering(false); // Switch to login view
+        } else {
+            setError(result.message);
+        }
+    } else { // Login logic
+        const { error: loginError } = await login(formData.email, formData.password);
+        if (loginError) {
+            setError(loginError);
+        }
+        // Successful login is now handled by the onAuthStateChange listener in AppContext.
+        // It will set the user and automatically navigate away from this page.
     }
     setIsLoading(false);
   };

@@ -1,19 +1,35 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { Product, User, CartItem, Order, Message, ToastMessage, Review, Collection } from '../types';
 import { api } from '../services/api';
 import { db, PendingRegistration } from '../services/db';
+import { supabase } from '../services/supabaseClient';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+
+// Helper to extract our custom user metadata from Supabase user
+const formatSupabaseUser = (supabaseUser: any): User | null => {
+    if (!supabaseUser) return null;
+    return {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        firstName: supabaseUser.user_metadata?.firstName || '',
+        paternalLastName: supabaseUser.user_metadata?.paternalLastName || '',
+        maternalLastName: supabaseUser.user_metadata?.maternalLastName || '',
+        address: supabaseUser.user_metadata?.address || '',
+        role: supabaseUser.user_metadata?.role || 'customer',
+    };
+};
 
 interface AppContextType {
   // Auth & User
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, pass: string) => Promise<User | null>;
-  register: (userData: PendingRegistration) => Promise<User | null>;
+  login: (email: string, pass: string) => Promise<{ error?: string; }>;
+  register: (userData: PendingRegistration) => Promise<{ success: boolean; message: string; }>;
   logout: () => void;
   updateProfile: (profileData: Partial<User>) => Promise<User | null>;
-  changePassword: (passwordData: { current: string; new: string }) => Promise<boolean>;
+  updateUserPassword: (newPassword: string) => Promise<{ error?: string }>;
   forgotPassword: (email: string) => Promise<boolean>;
-  resetPassword: (token: string, newPass: string) => Promise<boolean>;
 
   // Products
   allProducts: Product[];
@@ -86,6 +102,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // State
     const [user, setUser] = useState<User | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+    const [session, setSession] = useState<Session | null>(null);
     const [allProducts, setAllProducts] = useState<Product[]>([]);
     const [archivedProducts, setArchivedProducts] = useState<Product[]>([]);
     const [collections, setCollections] = useState<Collection[]>([]);
@@ -124,7 +141,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const addToast = useCallback((message: string, type: ToastMessage['type']) => {
         setToasts(prevToasts => {
-            // Prevent duplicate toasts from being added.
             if (prevToasts.some(t => t.message === message)) {
                 return prevToasts;
             }
@@ -132,6 +148,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return [...prevToasts, { id, message, type }];
         });
     }, []);
+    
+    // --- Supabase Auth Listener ---
+    useEffect(() => {
+        const getInitialSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setSession(session);
+            setUser(formatSupabaseUser(session?.user));
+            setIsAuthenticated(!!session);
+            setLoading(false); // Initial auth check is done
+        };
+
+        getInitialSession();
+
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+            (event: AuthChangeEvent, session: Session | null) => {
+                setSession(session);
+                const currentUser = formatSupabaseUser(session?.user);
+                setUser(currentUser);
+                setIsAuthenticated(!!session);
+
+                if (event === 'SIGNED_IN') {
+                    addToast(`¡Bienvenido, ${currentUser?.firstName}!`, 'success');
+                }
+                 if (event === 'PASSWORD_RECOVERY') {
+                    // This event is fired when the user clicks the password recovery link.
+                    // The session is automatically handled by the Supabase client.
+                    // The user can now be directed to the update password page.
+                    addToast('Puedes establecer una nueva contraseña.', 'info');
+                }
+            }
+        );
+
+        return () => {
+            authListener.subscription.unsubscribe();
+        };
+    }, [addToast]);
 
     // --- Data Fetching ---
     const fetchData = useCallback(async () => {
@@ -176,100 +228,82 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         try {
             if (user.role === 'customer') {
-                const [userOrders, userMessages, userWishlist] = await Promise.all([api.getMyOrders(user.id), api.getMessages(user.id), api.getWishlist(user.id)]);
+                const [userOrders, userMessages, userWishlist] = await Promise.all([api.getMyOrders(), api.getMessages(), api.getWishlist()]);
                 setOrders(userOrders);
                 setMessages(userMessages);
                 setWishlist(userWishlist);
             } else if (user.role === 'admin') {
-                const allMessages = await api.getMessages(user.id);
+                const allMessages = await api.getMessages();
                 setMessages(allMessages);
             }
-        } catch (e)
-{
+        } catch (e) {
             addToast(`Error al cargar tus datos: ${(e as Error).message}`, 'error');
         }
     }, [isAuthenticated, user, addToast]);
     
-    // Initial data load
     useEffect(() => {
         fetchData();
     }, [fetchData]);
 
-    // User-dependent data load
     useEffect(() => {
         fetchAdminData();
         fetchUserData();
-    }, [user, isAuthenticated, fetchAdminData, fetchUserData]);
+    }, [session, fetchAdminData, fetchUserData]); // Depend on session change
     
-    // Persist cart
     useEffect(() => {
         localStorage.setItem('cart', JSON.stringify(cart));
     }, [cart]);
 
 
     // --- Auth Methods ---
-    const login = useCallback(async (email: string, pass: string): Promise<User | null> => {
-        try {
-            const result = await api.login(email, pass);
-            if (result) {
-                localStorage.setItem('token', result.token);
-                setUser(result.user);
-                setIsAuthenticated(true);
-                addToast(`¡Bienvenido, ${result.user.firstName}!`, 'success');
-                return result.user;
+    const login = useCallback(async (email: string, pass: string): Promise<{ error?: string; }> => {
+        const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
+        if (error) {
+            let userMessage = 'Credenciales inválidas.';
+            if (error.message.includes('Email not confirmed')) {
+                userMessage = 'Por favor, verifica tu correo electrónico para iniciar sesión.';
             }
-            return null;
-        } catch (e) {
-            addToast((e as Error).message, 'error');
-            return null;
+            return { error: userMessage };
         }
-    }, [addToast]);
+        return {}; // Success is handled by onAuthStateChange listener
+    }, []);
 
-    const register = useCallback(async (userData: PendingRegistration): Promise<User | null> => {
-        if (!navigator.onLine) {
-            try {
-                await db.pendingRegistrations.add(userData);
-                if ('serviceWorker' in navigator && 'SyncManager' in window) {
-                    // Fix: Cast service worker registration to `any` to access the `sync` property for background sync.
-                    navigator.serviceWorker.ready.then(sw => (sw as any).sync.register('sync-new-registrations'));
-                }
-                addToast('Sin conexión. Tu registro se completará automáticamente.', 'info');
-                return null;
-            } catch (e) {
-                addToast(`Error guardando registro: ${(e as Error).message}`, 'error');
-                return null;
-            }
-        }
+    const register = useCallback(async (userData: PendingRegistration): Promise<{ success: boolean; message: string; }> => {
         try {
             const result = await api.register(userData);
-            if (result) {
-                localStorage.setItem('token', result.token);
-                setUser(result.user);
-                setIsAuthenticated(true);
-                addToast(`¡Bienvenido, ${result.user.firstName}!`, 'success');
-                return result.user;
-            }
-            return null;
+            return { success: true, message: result.message };
         } catch (e) {
-            addToast((e as Error).message, 'error');
-            return null;
+            return { success: false, message: (e as Error).message };
         }
-    }, [addToast]);
-
-    const logout = useCallback(() => {
-        localStorage.removeItem('token');
+    }, []);
+    
+    const logout = useCallback(async () => {
+        await supabase.auth.signOut();
+        // Clear all user-specific state
         setUser(null);
         setIsAuthenticated(false);
+        setSession(null);
         setCart([]);
         setWishlist([]);
+        setOrders([]);
+        setMessages([]);
+        localStorage.removeItem('sb-session'); // Manual clear for safety
         addToast('Has cerrado sesión.', 'info');
     }, [addToast]);
 
     const updateProfile = async (profileData: Partial<User>): Promise<User | null> => {
-        if (!user) return null;
-        try {
-            const updatedUser = await api.updateProfile(user.id, profileData);
-            setUser(updatedUser);
+       try {
+            const { data, error } = await supabase.auth.updateUser({
+                data: {
+                    firstName: profileData.firstName,
+                    paternalLastName: profileData.paternalLastName,
+                    maternalLastName: profileData.maternalLastName,
+                    address: profileData.address,
+                }
+            });
+            if (error) throw error;
+            const updatedUser = formatSupabaseUser(data.user);
+            setUser(updatedUser); // Update local state immediately
             addToast('Perfil actualizado.', 'success');
             return updatedUser;
         } catch(e) {
@@ -278,47 +312,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
 
-    const changePassword = async (passwordData: { current: string; new: string }): Promise<boolean> => {
-        if (!user) return false;
-        try {
-            // FIX: Refactored to pass a single object to the API client for consistency.
-            // This resolves the confusion from previous comments and aligns with best practices.
-            // FIX: Removed `userId` property from the `changePassword` call as it's not an expected property.
-            // The user ID is obtained from the auth token on the backend.
-            await api.changePassword({ current: passwordData.current, newPass: passwordData.new });
-            addToast('Contraseña actualizada con éxito.', 'success');
-            return true;
-        } catch(e) {
-            setError((e as Error).message);
-            addToast((e as Error).message, 'error');
-            return false;
+    const updateUserPassword = async (newPassword: string): Promise<{ error?: string }> => {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+            addToast(error.message, 'error');
+            return { error: error.message };
         }
+        addToast('Contraseña actualizada con éxito.', 'success');
+        return {};
     };
 
     const forgotPassword = async (email: string): Promise<boolean> => {
         try {
             await api.forgotPassword(email);
-            // Don't use a toast here, let the page component handle the message for a better UX.
             return true;
         } catch (e) {
             addToast((e as Error).message, 'error');
             return false;
         }
     };
-
-    const resetPassword = async (token: string, newPass: string): Promise<boolean> => {
-        try {
-            // FIX: Refactored to pass a single object to the API client for consistency.
-            // The mock API was updated to expect this structure.
-            await api.resetPassword({ token, newPass });
-            addToast('Contraseña restablecida con éxito. Ya puedes iniciar sesión.', 'success');
-            return true;
-        } catch (e) {
-            addToast((e as Error).message, 'error');
-            return false;
-        }
-    };
-
 
     // --- Product Methods ---
     const getProduct = useCallback(async (id: string) => {
@@ -329,8 +341,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             const newProduct = await api.addProduct(productData);
             if (newProduct) {
-                // Instead of refetching, add the new product to the state directly.
-                // This is faster and avoids potential caching issues.
                 setAllProducts(prev => [newProduct, ...prev]);
                 addToast('Producto añadido.', 'success');
                 return true;
@@ -349,7 +359,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             setAllProducts(updateList);
             setArchivedProducts(updateList);
             addToast('Producto actualizado.', 'success');
-            await fetchData(); // Refresh all lists
+            await fetchData();
             await fetchAdminData();
             return result;
         } catch(e) {
@@ -467,7 +477,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return;
         }
         try {
-            await api.addToWishlist(user.id, productId);
+            await api.addToWishlist(productId);
             const productToAdd = allProducts.find(p => p.id === productId);
             if (productToAdd && !isProductInWishlist(productId)) {
                 setWishlist(prev => [...prev, productToAdd]);
@@ -481,7 +491,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const removeFromWishlist = async (productId: string) => {
         if (!user) return;
         try {
-            await api.removeFromWishlist(user.id, productId);
+            await api.removeFromWishlist(productId);
             setWishlist(prev => prev.filter(item => item.id !== productId));
             addToast('Eliminado de la lista de deseos.', 'info');
         } catch (e) {
@@ -496,12 +506,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return false;
         }
         try {
-            const newOrder = await api.placeOrder(user.id, cart, user, cartTotal);
+            const newOrder = await api.placeOrder(cart, user, cartTotal);
             if (newOrder) {
                 addToast('¡Pedido realizado con éxito!', 'success');
                 setOrders(prev => [newOrder, ...prev]);
                 clearCart();
-                fetchData(); // Refresh product stock
+                fetchData();
                 return true;
             }
             return false;
@@ -513,15 +523,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     const getOrderDetail = useCallback(async (orderId: string) => {
         if (!user) return null;
-        // FIX: The API client expects only one argument for getOrderDetail.
-        // The backend uses the JWT token for authorization.
         return api.getOrderDetail(orderId);
     }, [user]);
     
     const cancelOrder = async (orderId: string) => {
         if (!user) return;
         try {
-            await api.cancelOrder(orderId, user.id);
+            await api.cancelOrder(orderId);
             setOrders(prev => prev.map(o => o.id === orderId ? {...o, status: 'Cancelado'} : o));
             addToast('Pedido cancelado.', 'success');
             fetchData();
@@ -540,7 +548,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const checkIfUserPurchasedProduct = (productId: string) => {
-        // The backend only allows reviews for delivered orders. Aligning frontend check.
         return orders.some(order => order.status === 'Entregado' && order.items.some(item => item.id === productId));
     };
 
@@ -550,11 +557,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            // FIX: The api.addProductReview function expects a single object argument.
-            // This was previously called with 3 separate arguments, causing an error.
             await api.addProductReview({ productId, rating, comment });
             addToast('Opinión enviada. ¡Gracias!', 'success');
-            fetchData(); // Refresh average rating
+            fetchData();
             return { success: true };
         } catch(e) {
             const err = e as Error;
@@ -578,7 +583,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const sendMessage = async (text: string, toId: string) => {
         if (!user) return;
         try {
-            const newMessage = await api.sendMessage(text, user.id, toId);
+            const newMessage = await api.sendMessage(text, toId);
             setMessages(prev => [...prev, newMessage]);
         } catch(e) {
              addToast(`Error enviando mensaje: ${(e as Error).message}`, 'error');
@@ -587,7 +592,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const markMessagesAsRead = useCallback(async (fromId: string) => {
         if (!user) return;
         try {
-            await api.markMessagesAsRead(user.id, fromId);
+            await api.markMessagesAsRead(fromId);
             setMessages(prev => prev.map(m => (m.toId === user!.id && m.fromId === fromId) ? {...m, read: true} : m));
         } catch (e) {
             // silent fail is ok here
@@ -595,7 +600,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [user]);
 
     const value = {
-        user, isAuthenticated, login, register, logout, updateProfile, changePassword, forgotPassword, resetPassword,
+        user, isAuthenticated, login, register, logout, updateProfile, updateUserPassword, forgotPassword,
         allProducts, archivedProducts, getProduct, addProduct, updateProduct, archiveProduct, deleteProductPermanently,
         collections, addCollection, updateCollection, deleteCollection,
         cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal,

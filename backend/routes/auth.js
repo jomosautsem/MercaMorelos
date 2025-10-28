@@ -1,134 +1,97 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const db = require('../db');
+const { supabase } = require('../db');
 const router = express.Router();
 
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
-};
-
 // @route   POST /api/auth/register
-// @desc    Register a new user
+// @desc    Register a new user using Supabase Auth
 // @access  Public
 router.post('/register', async (req, res) => {
   const { firstName, paternalLastName, maternalLastName, email, address, password } = req.body;
-
-  try {
-    const userExists = await db.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    if (userExists.rows.length > 0) {
-      return res.status(400).json({ message: 'User already exists' });
+  
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        firstName,
+        paternalLastName,
+        maternalLastName,
+        address,
+        role: email.toLowerCase() === 'jomosanano@gmail.com' ? 'admin' : 'customer',
+      }
     }
+  });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    
-    // Check if registering admin
-    const role = email.toLowerCase() === 'jomosanano@gmail.com' ? 'admin' : 'customer';
+  if (error) {
+    console.error('Supabase registration error:', error.message);
+    // Map Supabase error to a user-friendly message
+    let userMessage = 'Ocurrió un error durante el registro.';
+    if (error.message.includes('User already registered')) {
+        userMessage = 'El correo electrónico ya está en uso.';
+    } else if (error.message.includes('Password should be at least 6 characters')) {
+        userMessage = 'La contraseña debe tener al menos 6 caracteres.';
+    }
+    return res.status(error.status || 400).json({ message: userMessage });
+  }
 
-    const newUser = await db.query(
-      'INSERT INTO users ("firstName", "paternalLastName", "maternalLastName", email, address, password, role) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, "firstName", "paternalLastName", "maternalLastName", email, address, role',
-      [firstName, paternalLastName, maternalLastName, email, address, hashedPassword, role]
-    );
-
-    const user = newUser.rows[0];
-
+  // Supabase handles the email sending. If successful, user object exists but session is null until verification.
+  if (data.user) {
     res.status(201).json({
-      ...user,
-      token: generateToken(user.id),
+      message: '¡Registro exitoso! Por favor, revisa tu correo electrónico para activar tu cuenta.'
     });
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
+  } else {
+    res.status(500).json({ message: 'Error desconocido al crear el usuario.' });
   }
 });
 
+
 // @route   POST /api/auth/login
-// @desc    Authenticate user & get token
+// @desc    Authenticate user & get session using Supabase
 // @access  Public
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
-  try {
-    const result = await db.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-    const user = result.rows[0];
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-    if (user && (await bcrypt.compare(password, user.password))) {
-      // Don't send back the hashed password
-      delete user.password;
-      res.json({
-        ...user,
-        token: generateToken(user.id),
-      });
-    } else {
-      res.status(401).json({ message: 'Invalid credentials' });
+  if (error) {
+    console.error('Supabase login error:', error.message);
+    let userMessage = 'Credenciales inválidas.';
+    if (error.message.includes('Email not confirmed')) {
+      userMessage = 'Por favor, verifica tu correo electrónico para iniciar sesión.';
     }
-  } catch (error) {
-    console.error(error.message);
-    res.status(500).send('Server error');
+    return res.status(error.status || 401).json({ message: userMessage });
   }
+
+  res.json({
+    user: data.user,
+    session: data.session
+  });
 });
 
+
 // @route   POST /api/auth/forgot-password
-// @desc    Request password reset link
+// @desc    Request password reset link via Supabase
 // @access  Public
 router.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
-    try {
-        const userResult = await db.query('SELECT id, email FROM users WHERE LOWER(email) = LOWER($1)', [email]);
-        const user = userResult.rows[0];
+    
+    // The redirect URL must be whitelisted in your Supabase project settings
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'http://localhost:5173/#/update-password', // This URL is where Supabase will send the user
+    });
 
-        if (user) {
-            // In a real app, you would generate a secure token, store it in the password_reset_tokens table, and email it.
-            // For this exercise, we will just log a predictable token.
-            console.log(`Mock password reset link for ${email} would be: /#/reset-password/mock-reset-token-${user.id}`);
-        } else {
-             // To prevent user enumeration, don't reveal if an email exists or not.
-             console.log(`Mock password reset requested for non-existent user ${email}, but we send a generic success message.`);
-        }
-        
-        // Always return a success-like message.
-        res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
-
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).send('Server error');
+    if (error) {
+        console.error('Supabase forgot password error:', error.message);
+        // Do not reveal if an email exists or not for security.
+        // Log the error but send a generic success message.
     }
+    
+    // Always return a success-like message to prevent user enumeration attacks.
+    res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
 });
 
-
-// @route   POST /api/auth/reset-password
-// @desc    Reset password with a token
-// @access  Public
-router.post('/reset-password', async (req, res) => {
-    const { token, newPass } = req.body;
-    try {
-        // This logic mimics the mockApi.ts and is not secure for production.
-        if (!token || !token.startsWith('mock-reset-token-')) {
-            return res.status(400).json({ message: 'El enlace de restablecimiento no es válido o ha expirado.' });
-        }
-
-        const userId = token.replace('mock-reset-token-', '');
-        const userResult = await db.query('SELECT id FROM users WHERE id = $1', [userId]);
-        const user = userResult.rows[0];
-        
-        if (!user) {
-             return res.status(400).json({ message: 'El enlace de restablecimiento no es válido o ha expirado.' });
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPass, salt);
-        
-        await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
-        
-        res.status(200).json({ message: 'Password has been reset successfully.' });
-
-    } catch (error) {
-        console.error(error.message);
-        res.status(500).send('Server error');
-    }
-});
 
 module.exports = router;

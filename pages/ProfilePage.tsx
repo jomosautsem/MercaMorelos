@@ -6,7 +6,7 @@ import { User } from '../types';
 type UserProfileData = Omit<User, 'id' | 'role' | 'email'>;
 
 const ProfilePage: React.FC = () => {
-    const { user, updateProfile, changePassword, error } = useAppContext();
+    const { user, updateProfile, updateUserPassword, addToast } = useAppContext();
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -19,7 +19,6 @@ const ProfilePage: React.FC = () => {
     });
 
     const [passwordData, setPasswordData] = useState({
-        current: '',
         new: '',
         confirm: '',
     });
@@ -34,12 +33,6 @@ const ProfilePage: React.FC = () => {
             });
         }
     }, [user]);
-    
-    useEffect(() => {
-        if(error) {
-            setMessage({ type: 'error', text: error });
-        }
-    }, [error]);
 
     const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -65,18 +58,22 @@ const ProfilePage: React.FC = () => {
 
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (passwordData.new.length < 6) {
+            setMessage({ type: 'error', text: 'La nueva contraseña debe tener al menos 6 caracteres.' });
+            return;
+        }
         if (passwordData.new !== passwordData.confirm) {
             setMessage({ type: 'error', text: 'Las nuevas contraseñas no coinciden.' });
             return;
         }
         setIsLoading(true);
         setMessage(null);
-        const success = await changePassword(passwordData);
-        if (success) {
+        const { error } = await updateUserPassword(passwordData.new);
+        if (!error) {
             setMessage({ type: 'success', text: '¡Contraseña cambiada con éxito!' });
-            setPasswordData({ current: '', new: '', confirm: '' });
+            setPasswordData({ new: '', confirm: '' });
         } else {
-            // Error message is already set by the context hook
+            setMessage({ type: 'error', text: 'No se pudo cambiar la contraseña.' });
         }
         setIsLoading(false);
     };
@@ -148,10 +145,6 @@ const ProfilePage: React.FC = () => {
                          <h2 className="text-2xl font-bold mb-6">Cambiar Contraseña</h2>
                          <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-on-surface-secondary">Contraseña Actual</label>
-                                <input type="password" name="current" value={passwordData.current} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
-                            </div>
-                            <div>
                                 <label className="block text-sm font-medium text-on-surface-secondary">Nueva Contraseña</label>
                                 <input type="password" name="new" value={passwordData.new} onChange={handlePasswordChange} required className="mt-1 block w-full px-3 py-2 bg-surface-light border border-border-color rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"/>
                             </div>
@@ -161,7 +154,7 @@ const ProfilePage: React.FC = () => {
                             </div>
                          </div>
                          <div className="mt-8">
-                             <button type="submit" disabled={isLoading} className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-secondary hover:bg-secondary-focus disabled:opacity-50">
+                             <button type="submit" disabled={isLoading} className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-slate-900 bg-primary hover:bg-primary-focus disabled:opacity-50">
                                  {isLoading ? 'Actualizando...' : 'Actualizar Contraseña'}
                              </button>
                          </div>

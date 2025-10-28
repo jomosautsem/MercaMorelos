@@ -34,7 +34,8 @@ import CollectionFormPage from './pages/admin/CollectionFormPage';
 import WishlistPage from './pages/WishlistPage';
 import type { ToastMessage } from './types';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
+import UpdatePasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -128,7 +129,7 @@ const WhatsAppButton: React.FC = () => {
 };
 
 const AppRoutes: React.FC = () => {
-    const { user } = useAppContext();
+    const { isAuthenticated } = useAppContext();
     return (
         <div className="flex flex-col min-h-screen">
           <Header />
@@ -159,9 +160,10 @@ const AppRoutes: React.FC = () => {
               <Route path="/collection/:collectionId" element={<ProductListPage />} />
               <Route path="/product/:productId" element={<ProductDetailPage />} />
               <Route path="/cart" element={<CartPage />} />
-              <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+              <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+              <Route path="/update-password" element={<UpdatePasswordPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
 
               {/* Protected Customer Routes */}
               <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />

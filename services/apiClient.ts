@@ -1,11 +1,27 @@
 import { Product, User, Order, Message, CartItem, Review, Collection } from '../types';
+import { Session } from '@supabase/supabase-js';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
 const getAuthHeaders = () => {
-    const token = localStorage.getItem('token');
-    return token ? { 'Authorization': `Bearer ${token}` } : {};
+    try {
+        const sessionString = localStorage.getItem('sb-session');
+        if (sessionString) {
+            const session: Session = JSON.parse(sessionString);
+            return { 'Authorization': `Bearer ${session.access_token}` };
+        }
+    } catch (e) {
+        // Could be that the key is named differently depending on Supabase client version/config
+        // This is a fallback to the common pattern, adjust if needed
+        const supabaseAuthToken = localStorage.getItem('supabase.auth.token');
+        if (supabaseAuthToken) {
+             const { currentSession } = JSON.parse(supabaseAuthToken);
+             return { 'Authorization': `Bearer ${currentSession.access_token}` };
+        }
+    }
+    return {};
 };
+
 
 const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     try {
@@ -76,34 +92,31 @@ export const apiClient = {
     },
 
     // WISHLIST
-    async getWishlist(userId: string): Promise<Product[]> { // userId for compatibility
+    async getWishlist(): Promise<Product[]> {
         return apiFetch('/users/wishlist');
     },
-    async addToWishlist(userId: string, productId: string): Promise<boolean> { // userId for compatibility
+    async addToWishlist(productId: string): Promise<boolean> {
         await apiFetch('/users/wishlist', { method: 'POST', body: JSON.stringify({ productId }) });
         return true;
     },
-    async removeFromWishlist(userId: string, productId: string): Promise<boolean> { // userId for compatibility
+    async removeFromWishlist(productId: string): Promise<boolean> {
         await apiFetch(`/users/wishlist/${productId}`, { method: 'DELETE' });
         return true;
     },
 
     // AUTH
-    async login(email: string, pass: string): Promise<{user: User, token: string} | null> {
-        const response = await apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pass }) });
-        if (!response || !response.token) return null;
-        const { token, ...user } = response;
-        return { user, token };
+    async login(email: string, pass: string): Promise<{user: User, session: Session}> {
+        return apiFetch('/auth/login', { method: 'POST', body: JSON.stringify({ email, password: pass }) });
     },
-    async register(userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<{user: User, token: string} | null> {
-        const response = await apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(userData) });
-        if (!response || !response.token) return null;
-        const { token, ...user } = response;
-        return { user, token };
+    async register(userData: Omit<User, 'id' | 'role'> & { password: string }): Promise<{message: string}> {
+        return apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(userData) });
+    },
+    async forgotPassword(email: string): Promise<{ msg: string }> {
+        return apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
     },
 
     // ORDERS
-    async getMyOrders(userId: string): Promise<Order[]> { // userId is for signature compatibility, but not used.
+    async getMyOrders(): Promise<Order[]> {
         return apiFetch('/orders/myorders');
     },
     async getAllOrders(): Promise<Order[]> {
@@ -112,10 +125,10 @@ export const apiClient = {
     async getOrderDetail(orderId: string): Promise<Order | null> {
         return apiFetch(`/orders/${orderId}`);
     },
-    async placeOrder(userId: string, cart: CartItem[], shippingInfo: User, total: number): Promise<Order | null> {
+    async placeOrder(cart: CartItem[], shippingInfo: User, total: number): Promise<Order | null> {
         return apiFetch('/orders', { method: 'POST', body: JSON.stringify({ cartItems: cart, shippingInfo, total }) });
     },
-    async cancelOrder(orderId: string, userId: string): Promise<boolean> { // userId for compatibility
+    async cancelOrder(orderId: string): Promise<boolean> {
         await apiFetch(`/orders/${orderId}/cancel`, { method: 'PUT' });
         return true;
     },
@@ -132,29 +145,18 @@ export const apiClient = {
         await apiFetch(`/users/${customerId}`, { method: 'DELETE' });
         return true;
     },
-    async updateProfile(userId: string, profileData: Partial<User>): Promise<User> { // userId for compatibility
+    async updateProfile(profileData: Partial<User>): Promise<User> {
         return apiFetch('/users/profile', { method: 'PUT', body: JSON.stringify(profileData) });
-    },
-    // FIX: Refactored to accept a single object argument for better consistency.
-    async changePassword({ current, newPass }: { current: string, newPass: string }): Promise<{ msg: string }> {
-        return apiFetch('/users/password', { method: 'PUT', body: JSON.stringify({ currentPassword: current, newPassword: newPass }) });
-    },
-    // Fix: Add forgotPassword and resetPassword methods to the API client to resolve type errors in AppContext.
-    async forgotPassword(email: string): Promise<{ msg: string }> {
-        return apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
-    },
-    async resetPassword({ token, newPass }: { token: string; newPass: string }): Promise<{ msg: string }> {
-        return apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPass }) });
     },
 
     // MESSAGES
-    async getMessages(userId: string): Promise<Message[]> { // userId for compatibility
+    async getMessages(): Promise<Message[]> {
         return apiFetch('/messages');
     },
-    async sendMessage(text: string, fromId: string, toId: string): Promise<Message> { // fromId for compatibility
+    async sendMessage(text: string, toId: string): Promise<Message> {
         return apiFetch('/messages', { method: 'POST', body: JSON.stringify({ toId, text }) });
     },
-    async markMessagesAsRead(userId: string, fromId: string): Promise<boolean> { // userId for compatibility
+    async markMessagesAsRead(fromId: string): Promise<boolean> {
         await apiFetch('/messages/read', { method: 'PUT', body: JSON.stringify({ fromId }) });
         return true;
     },
@@ -163,7 +165,6 @@ export const apiClient = {
     async getReviewsForProduct(productId: string): Promise<Review[]> {
         return apiFetch(`/products/${productId}/reviews`);
     },
-    // FIX: Reverted signature to accept a single object argument to resolve the "Expected 1 arguments, but got 3" error.
     async addProductReview({ productId, rating, comment }: { productId: string, rating: number, comment: string }): Promise<Review> {
         return apiFetch(`/products/${productId}/reviews`, { method: 'POST', body: JSON.stringify({ rating, comment }) });
     },
