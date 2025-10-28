@@ -71,4 +71,64 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/forgot-password
+// @desc    Request password reset link
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    try {
+        const userResult = await db.query('SELECT id, email FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+        const user = userResult.rows[0];
+
+        if (user) {
+            // In a real app, you would generate a secure token, store it in the password_reset_tokens table, and email it.
+            // For this exercise, we will just log a predictable token.
+            console.log(`Mock password reset link for ${email} would be: /#/reset-password/mock-reset-token-${user.id}`);
+        } else {
+             // To prevent user enumeration, don't reveal if an email exists or not.
+             console.log(`Mock password reset requested for non-existent user ${email}, but we send a generic success message.`);
+        }
+        
+        // Always return a success-like message.
+        res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Server error');
+    }
+});
+
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with a token
+// @access  Public
+router.post('/reset-password', async (req, res) => {
+    const { token, newPass } = req.body;
+    try {
+        // This logic mimics the mockApi.ts and is not secure for production.
+        if (!token || !token.startsWith('mock-reset-token-')) {
+            return res.status(400).json({ message: 'El enlace de restablecimiento no es válido o ha expirado.' });
+        }
+
+        const userId = token.replace('mock-reset-token-', '');
+        const userResult = await db.query('SELECT id FROM users WHERE id = $1', [userId]);
+        const user = userResult.rows[0];
+        
+        if (!user) {
+             return res.status(400).json({ message: 'El enlace de restablecimiento no es válido o ha expirado.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPass, salt);
+        
+        await db.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId]);
+        
+        res.status(200).json({ message: 'Password has been reset successfully.' });
+
+    } catch (error) {
+        console.error(error.message);
+        res.status(500).send('Server error');
+    }
+});
+
 module.exports = router;

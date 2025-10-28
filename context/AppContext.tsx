@@ -12,6 +12,8 @@ interface AppContextType {
   logout: () => void;
   updateProfile: (profileData: Partial<User>) => Promise<User | null>;
   changePassword: (passwordData: { current: string; new: string }) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (token: string, newPass: string) => Promise<boolean>;
 
   // Products
   allProducts: Product[];
@@ -293,6 +295,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     };
 
+    const forgotPassword = async (email: string): Promise<boolean> => {
+        try {
+            await api.forgotPassword(email);
+            // Don't use a toast here, let the page component handle the message for a better UX.
+            return true;
+        } catch (e) {
+            addToast((e as Error).message, 'error');
+            return false;
+        }
+    };
+
+    const resetPassword = async (token: string, newPass: string): Promise<boolean> => {
+        try {
+            // FIX: Refactored to pass a single object to the API client for consistency.
+            // The mock API was updated to expect this structure.
+            await api.resetPassword({ token, newPass });
+            addToast('Contraseña restablecida con éxito. Ya puedes iniciar sesión.', 'success');
+            return true;
+        } catch (e) {
+            addToast((e as Error).message, 'error');
+            return false;
+        }
+    };
+
+
     // --- Product Methods ---
     const getProduct = useCallback(async (id: string) => {
         return api.getProduct(id);
@@ -568,7 +595,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }, [user]);
 
     const value = {
-        user, isAuthenticated, login, register, logout, updateProfile, changePassword,
+        user, isAuthenticated, login, register, logout, updateProfile, changePassword, forgotPassword, resetPassword,
         allProducts, archivedProducts, getProduct, addProduct, updateProduct, archiveProduct, deleteProductPermanently,
         collections, addCollection, updateCollection, deleteCollection,
         cart, addToCart, removeFromCart, updateQuantity, clearCart, cartCount, cartTotal,

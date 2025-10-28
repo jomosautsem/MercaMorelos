@@ -600,6 +600,32 @@ export const mockApi = {
         console.log(`Mock: Changed password for ${user.email}`);
         return { msg: 'Password updated successfully' };
     },
+    async forgotPassword(email: string): Promise<{ msg: string }> {
+        await delay(500);
+        const user = mockUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (user) {
+            // In a real app, you'd generate a secure, single-use token and email it.
+            console.log(`Mock: Password reset link for ${email} would be: /#/reset-password/mock-reset-token-${user.id}`);
+        } else {
+            // Don't reveal if an email exists or not for security reasons.
+            console.log(`Mock: Password reset requested for non-existent user ${email}, but we send a generic success message.`);
+        }
+        // Always return a success-like message to prevent user enumeration attacks.
+        return { msg: 'If an account with that email exists, a password reset link has been sent.' };
+    },
+    async resetPassword({ token, newPass }: { token: string, newPass: string }): Promise<{ msg: string }> {
+        await delay(500);
+        // In a real app, you'd validate the token against a database record.
+        if (token.startsWith('mock-reset-token-')) {
+             const userId = token.replace('mock-reset-token-', '');
+             const user = mockUsers.find(u => u.id === userId);
+             if (user) {
+                console.log(`Mock: Password for ${user.email} has been reset to "${newPass}".`);
+                return { msg: 'Password has been reset successfully.' };
+             }
+        }
+        throw new Error('El enlace de restablecimiento no es válido o ha expirado.');
+    },
     async getReviewsForProduct(productId: string): Promise<Review[]> {
         await delay(300);
         return mockReviews.filter(r => r.productId === productId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

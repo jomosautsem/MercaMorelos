@@ -33,6 +33,8 @@ import AdminCollectionsPage from './pages/admin/AdminCollectionsPage';
 import CollectionFormPage from './pages/admin/CollectionFormPage';
 import WishlistPage from './pages/WishlistPage';
 import type { ToastMessage } from './types';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -158,6 +160,8 @@ const AppRoutes: React.FC = () => {
               <Route path="/product/:productId" element={<ProductDetailPage />} />
               <Route path="/cart" element={<CartPage />} />
               <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
               {/* Protected Customer Routes */}
               <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />

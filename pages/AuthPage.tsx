@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 
 const FormField: React.FC<{
@@ -115,6 +115,12 @@ const AuthPage: React.FC = () => {
             <FormField name="password" label="Contraseña" type="password" value={formData.password} onChange={handleChange} />
             {isRegistering && (
                 <FormField name="confirmPassword" label="Confirmar Contraseña" type="password" value={formData.confirmPassword} onChange={handleChange} />
+            )}
+            
+            {!isRegistering && (
+                 <div className="text-right text-sm">
+                    <Link to="/forgot-password" className="font-medium text-primary-focus hover:text-amber-600">¿Olvidaste tu contraseña?</Link>
+                 </div>
             )}
 
           <div>

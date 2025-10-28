@@ -139,6 +139,13 @@ export const apiClient = {
     async changePassword({ current, newPass }: { current: string, newPass: string }): Promise<{ msg: string }> {
         return apiFetch('/users/password', { method: 'PUT', body: JSON.stringify({ currentPassword: current, newPassword: newPass }) });
     },
+    // Fix: Add forgotPassword and resetPassword methods to the API client to resolve type errors in AppContext.
+    async forgotPassword(email: string): Promise<{ msg: string }> {
+        return apiFetch('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+    },
+    async resetPassword({ token, newPass }: { token: string; newPass: string }): Promise<{ msg: string }> {
+        return apiFetch('/auth/reset-password', { method: 'POST', body: JSON.stringify({ token, newPass }) });
+    },
 
     // MESSAGES
     async getMessages(userId: string): Promise<Message[]> { // userId for compatibility
