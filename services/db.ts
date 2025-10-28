@@ -10,8 +10,7 @@ export class MercaMorelosDB extends Dexie {
 
   constructor() {
     super('MercaMorelosDB');
-    // FIX: Cast `this` to Dexie to resolve the type error "Property 'version' does not exist on type 'MercaMorelosDB'".
-    // This explicitly tells TypeScript to use the `version` method from the base Dexie class.
+    // FIX: Cast 'this' to Dexie to resolve TypeScript typing issue where it fails to recognize the inherited 'version' method in the subclass.
     (this as Dexie).version(1).stores({
       // '++id' creates an auto-incrementing primary key.
       // 'email' is an index to allow quick lookups if needed.

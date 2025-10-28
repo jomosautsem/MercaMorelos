@@ -10,7 +10,6 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  // FIX: Add `isAuthenticated` to the context destructuring to resolve 'Cannot find name' error.
   const { addToCart, user, isProductInWishlist, addToWishlist, removeFromWishlist, isAuthenticated } = useAppContext();
   const isOutOfStock = product.stock === 0;
   const inWishlist = isProductInWishlist(product.id);

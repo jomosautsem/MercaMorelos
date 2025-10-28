@@ -1,7 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { Product, User, CartItem, Order, Message, ToastMessage, Review, Collection } from '../types';
-import { api } from '../services/api';
 import { db, PendingRegistration } from '../services/db';
 import { supabase } from '../services/supabaseClient';
 import { AuthChangeEvent, Session } from '@supabase/supabase-js';
@@ -172,9 +170,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     addToast(`¡Bienvenido, ${currentUser?.firstName}!`, 'success');
                 }
                  if (event === 'PASSWORD_RECOVERY') {
-                    // This event is fired when the user clicks the password recovery link.
-                    // The session is automatically handled by the Supabase client.
-                    // The user can now be directed to the update password page.
                     addToast('Puedes establecer una nueva contraseña.', 'info');
                 }
             }
@@ -189,9 +184,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [productsData, collectionsData] = await Promise.all([api.getProducts(), api.getCollections()]);
-            setAllProducts(productsData);
-            setCollections(collectionsData);
+            const [productsData, collectionsData] = await Promise.all([
+                 supabase.from('products').select('*, reviews(rating)').eq('isArchived', false).order('createdAt', { ascending: false }),
+                 supabase.from('collections').select('*').order('name', { ascending: true })
+            ]);
+
+            if (productsData.error) throw productsData.error;
+            if (collectionsData.error) throw collectionsData.error;
+            
+            const productsWithRatings = productsData.data.map(p => {
+                 const reviews = (p.reviews as unknown as { rating: number }[]) || [];
+                 const reviewCount = reviews.length;
+                 const averageRating = reviewCount > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount : 0;
+                 return { ...p, averageRating, reviewCount, reviews: undefined };
+            });
+
+            setAllProducts(productsWithRatings as Product[]);
+            setCollections(collectionsData.data as Collection[]);
+
         } catch (e) {
             addToast(`Error al cargar datos: ${(e as Error).message}`, 'error');
         } finally {
@@ -207,13 +217,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         try {
             const [archived, allOrders, allCustomers] = await Promise.all([
-                api.getArchivedProducts(),
-                api.getAllOrders(),
-                api.getCustomers()
+                 supabase.from('products').select('*').eq('isArchived', true).order('createdAt', { ascending: false }),
+                 supabase.from('orders').select('*, user:users(*)').order('date', { ascending: false }),
+                 supabase.from('users').select('*').eq('role', 'customer')
             ]);
-            setArchivedProducts(archived);
-            setOrders(allOrders);
-            setCustomers(allCustomers);
+            if (archived.error) throw archived.error;
+            if (allOrders.error) throw allOrders.error;
+            if (allCustomers.error) throw allCustomers.error;
+
+            setArchivedProducts(archived.data as Product[]);
+            setOrders(allOrders.data.map(o => ({...o, shippingInfo: o.user})) as Order[]);
+            setCustomers(allCustomers.data as User[]);
         } catch (e) {
             addToast(`Error al cargar datos de admin: ${(e as Error).message}`, 'error');
         }
@@ -228,13 +242,29 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
         try {
             if (user.role === 'customer') {
-                const [userOrders, userMessages, userWishlist] = await Promise.all([api.getMyOrders(), api.getMessages(), api.getWishlist()]);
-                setOrders(userOrders);
-                setMessages(userMessages);
-                setWishlist(userWishlist);
+                const [userOrders, userMessages, userWishlist] = await Promise.all([
+                    supabase.from('orders').select('*, items:order_items(*, product:products(*))').eq('userId', user.id).order('date', { ascending: false }),
+                    supabase.from('messages').select('*').or(`fromId.eq.${user.id},toId.eq.${user.id}`),
+                    supabase.from('wishlist').select('product:products(*, reviews(rating))').eq('userId', user.id)
+                ]);
+                if (userOrders.error) throw userOrders.error;
+                if (userMessages.error) throw userMessages.error;
+                if (userWishlist.error) throw userWishlist.error;
+
+                setOrders(userOrders.data as Order[]);
+                setMessages(userMessages.data as Message[]);
+                const wishlistProducts = userWishlist.data.map(item => {
+                    const product = item.product as any;
+                    const reviews = (product.reviews as { rating: number }[]) || [];
+                    const reviewCount = reviews.length;
+                    const averageRating = reviewCount > 0 ? reviews.reduce((acc, r) => acc + r.rating, 0) / reviewCount : 0;
+                    return { ...product, averageRating, reviewCount, reviews: undefined };
+                });
+                setWishlist(wishlistProducts);
             } else if (user.role === 'admin') {
-                const allMessages = await api.getMessages();
-                setMessages(allMessages);
+                const { data, error } = await supabase.from('messages').select('*');
+                if (error) throw error;
+                setMessages(data as Message[]);
             }
         } catch (e) {
             addToast(`Error al cargar tus datos: ${(e as Error).message}`, 'error');
@@ -248,7 +278,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     useEffect(() => {
         fetchAdminData();
         fetchUserData();
-    }, [session, fetchAdminData, fetchUserData]); // Depend on session change
+    }, [session, fetchAdminData, fetchUserData]);
     
     useEffect(() => {
         localStorage.setItem('cart', JSON.stringify(cart));
@@ -265,21 +295,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             return { error: userMessage };
         }
-        return {}; // Success is handled by onAuthStateChange listener
+        return {};
     }, []);
 
     const register = useCallback(async (userData: PendingRegistration): Promise<{ success: boolean; message: string; }> => {
-        try {
-            const result = await api.register(userData);
-            return { success: true, message: result.message };
-        } catch (e) {
-            return { success: false, message: (e as Error).message };
+        const { data, error } = await supabase.auth.signUp({
+            email: userData.email,
+            password: userData.password,
+            options: {
+              data: {
+                firstName: userData.firstName,
+                paternalLastName: userData.paternalLastName,
+                maternalLastName: userData.maternalLastName,
+                address: userData.address,
+                role: 'customer',
+              }
+            }
+          });
+        
+        if (error) {
+            return { success: false, message: error.message };
         }
+        return { success: true, message: '¡Registro exitoso! Revisa tu correo para activar tu cuenta.' };
     }, []);
     
     const logout = useCallback(async () => {
         await supabase.auth.signOut();
-        // Clear all user-specific state
         setUser(null);
         setIsAuthenticated(false);
         setSession(null);
@@ -287,7 +328,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setWishlist([]);
         setOrders([]);
         setMessages([]);
-        localStorage.removeItem('sb-session'); // Manual clear for safety
         addToast('Has cerrado sesión.', 'info');
     }, [addToast]);
 
@@ -303,7 +343,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             });
             if (error) throw error;
             const updatedUser = formatSupabaseUser(data.user);
-            setUser(updatedUser); // Update local state immediately
+            setUser(updatedUser);
             addToast('Perfil actualizado.', 'success');
             return updatedUser;
         } catch(e) {
@@ -323,29 +363,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     const forgotPassword = async (email: string): Promise<boolean> => {
-        try {
-            await api.forgotPassword(email);
-            return true;
-        } catch (e) {
-            addToast((e as Error).message, 'error');
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + '/#/update-password',
+        });
+        if (error) {
+            addToast(error.message, 'error');
             return false;
         }
+        return true;
     };
 
     // --- Product Methods ---
     const getProduct = useCallback(async (id: string) => {
-        return api.getProduct(id);
+        const { data, error } = await supabase.from('products').select('*').eq('id', id).single();
+        if (error) return undefined;
+        return data as Product;
     }, []);
     
     const addProduct = async (productData: Omit<Product, 'id'>): Promise<boolean> => {
         try {
-            const newProduct = await api.addProduct(productData);
-            if (newProduct) {
-                setAllProducts(prev => [newProduct, ...prev]);
-                addToast('Producto añadido.', 'success');
-                return true;
-            }
-            return false;
+            const { error } = await supabase.from('products').insert([productData]);
+            if (error) throw error;
+            addToast('Producto añadido.', 'success');
+            await fetchData();
+            return true;
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
             return false;
@@ -354,14 +395,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     const updateProduct = async (updatedProduct: Product) => {
         try {
-            const result = await api.updateProduct(updatedProduct);
-            const updateList = (list: Product[]) => list.map(p => p.id === result!.id ? result! : p);
-            setAllProducts(updateList);
-            setArchivedProducts(updateList);
+            const { id, averageRating, reviewCount, ...updateData } = updatedProduct;
+            const { data, error } = await supabase.from('products').update(updateData).eq('id', id).select().single();
+            if (error) throw error;
             addToast('Producto actualizado.', 'success');
             await fetchData();
             await fetchAdminData();
-            return result;
+            return data as Product;
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
             return null;
@@ -370,11 +410,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const archiveProduct = async (productId: string) => {
         try {
-            await api.archiveProduct(productId);
-            setAllProducts(prev => prev.filter(p => p.id !== productId));
-            const archived = allProducts.find(p => p.id === productId);
-            if (archived) setArchivedProducts(prev => [archived, ...prev]);
+            const { error } = await supabase.from('products').update({ isArchived: true }).eq('id', productId);
+            if (error) throw error;
             addToast('Producto archivado.', 'success');
+            await fetchData();
+            await fetchAdminData();
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
@@ -382,10 +422,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const deleteProductPermanently = async (productId: string) => {
         try {
-            await api.deleteProductPermanently(productId);
-            setArchivedProducts(prev => prev.filter(p => p.id !== productId));
-            setAllProducts(prev => prev.filter(p => p.id !== productId));
+            const { error } = await supabase.from('products').delete().eq('id', productId);
+            if (error) throw error;
             addToast('Producto eliminado.', 'success');
+            await fetchData();
+            await fetchAdminData();
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
@@ -394,27 +435,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // --- Collection Methods ---
     const addCollection = async (collectionData: Omit<Collection, 'id'>) => {
         try {
-            const newCollection = await api.addCollection(collectionData);
-            setCollections(prev => [...prev, newCollection].sort((a,b) => a.name.localeCompare(b.name)));
+            const { error } = await supabase.from('collections').insert([collectionData]);
+            if (error) throw error;
             addToast('Colección añadida.', 'success');
+            await fetchData();
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
     };
     const updateCollection = async (updatedCollection: Collection) => {
         try {
-            const result = await api.updateCollection(updatedCollection);
-            setCollections(prev => prev.map(c => c.id === result!.id ? result! : c));
+            const { id, ...updateData } = updatedCollection;
+            const { error } = await supabase.from('collections').update(updateData).eq('id', id);
+            if (error) throw error;
             addToast('Colección actualizada.', 'success');
+            await fetchData();
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
     };
     const deleteCollection = async (collectionId: string) => {
         try {
-            await api.deleteCollection(collectionId);
-            setCollections(prev => prev.filter(c => c.id !== collectionId));
+            const { error } = await supabase.from('collections').delete().eq('id', collectionId);
+            if (error) throw error;
             addToast('Colección eliminada.', 'success');
+            await fetchData();
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
@@ -477,12 +522,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return;
         }
         try {
-            await api.addToWishlist(productId);
-            const productToAdd = allProducts.find(p => p.id === productId);
-            if (productToAdd && !isProductInWishlist(productId)) {
-                setWishlist(prev => [...prev, productToAdd]);
-                addToast('Añadido a la lista de deseos.', 'success');
-            }
+            const { error } = await supabase.from('wishlist').insert([{ userId: user.id, productId: productId }]);
+            if (error) throw error;
+            addToast('Añadido a la lista de deseos.', 'success');
+            await fetchUserData();
         } catch (e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
@@ -491,9 +534,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const removeFromWishlist = async (productId: string) => {
         if (!user) return;
         try {
-            await api.removeFromWishlist(productId);
-            setWishlist(prev => prev.filter(item => item.id !== productId));
+            const { error } = await supabase.from('wishlist').delete().match({ userId: user.id, productId: productId });
+            if (error) throw error;
             addToast('Eliminado de la lista de deseos.', 'info');
+            await fetchUserData();
         } catch (e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
@@ -506,42 +550,56 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             return false;
         }
         try {
-            const newOrder = await api.placeOrder(cart, user, cartTotal);
-            if (newOrder) {
-                addToast('¡Pedido realizado con éxito!', 'success');
-                setOrders(prev => [newOrder, ...prev]);
-                clearCart();
-                fetchData();
-                return true;
-            }
-            return false;
+            const { error } = await supabase.rpc('create_order', {
+                p_user_id: user.id,
+                p_cart_items: cart.map(item => ({ product_id: item.id, quantity: item.quantity, price: item.price })),
+                p_shipping_info: {
+                    firstName: user.firstName,
+                    paternalLastName: user.paternalLastName,
+                    maternalLastName: user.maternalLastName,
+                    email: user.email,
+                    address: user.address,
+                }
+            });
+
+            if (error) throw error;
+            
+            addToast('¡Pedido realizado con éxito!', 'success');
+            clearCart();
+            await fetchData();
+            await fetchUserData();
+            return true;
         } catch (e) {
             addToast(`Error al realizar el pedido: ${(e as Error).message}`, 'error');
             return false;
         }
-    }, [user, cart, cartTotal, addToast, clearCart, fetchData]);
+    }, [user, cart, addToast, clearCart, fetchData, fetchUserData]);
     
     const getOrderDetail = useCallback(async (orderId: string) => {
         if (!user) return null;
-        return api.getOrderDetail(orderId);
+        const { data, error } = await supabase.from('orders').select('*, items:order_items(*, product:products(*)), user:users(*)').eq('id', orderId).single();
+        if (error || !data) return null;
+        return { ...data, shippingInfo: data.user } as Order;
     }, [user]);
     
     const cancelOrder = async (orderId: string) => {
         if (!user) return;
         try {
-            await api.cancelOrder(orderId);
-            setOrders(prev => prev.map(o => o.id === orderId ? {...o, status: 'Cancelado'} : o));
+            const { error } = await supabase.rpc('cancel_order_user', { p_order_id: orderId, p_user_id: user.id });
+            if (error) throw error;
             addToast('Pedido cancelado.', 'success');
-            fetchData();
+            await fetchData();
+            await fetchUserData();
         } catch(e) {
              addToast(`Error: ${(e as Error).message}`, 'error');
         }
     };
     const updateOrderStatus = async (orderId: string, status: Order['status']) => {
         try {
-            await api.updateOrderStatus(orderId, status);
-            setOrders(prev => prev.map(o => o.id === orderId ? {...o, status} : o));
+            const { error } = await supabase.from('orders').update({ status, deliveryDate: status === 'Entregado' ? new Date().toISOString() : null }).eq('id', orderId);
+            if (error) throw error;
             addToast('Estado del pedido actualizado.', 'success');
+            await fetchAdminData();
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
@@ -552,14 +610,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
 
     // --- Review Methods ---
-    const getReviewsForProduct = async (productId: string) => api.getReviewsForProduct(productId);
+    const getReviewsForProduct = async (productId: string) => {
+        const { data, error } = await supabase.from('reviews').select('*, user:users(firstName, paternalLastName)').eq('productId', productId);
+        if (error || !data) return [];
+        return data.map(r => ({ ...r, userName: `${r.user.firstName} ${r.user.paternalLastName}`.trim() })) as Review[];
+    };
     
     const addProductReview = async (productId: string, rating: number, comment: string): Promise<{ success: boolean; message?: string }> => {
         if (!user) return { success: false, message: 'User not logged in' };
         try {
-            await api.addProductReview({ productId, rating, comment });
+            const { error } = await supabase.from('reviews').upsert({ productId, userId: user.id, rating, comment });
+            if (error) throw error;
             addToast('Opinión enviada. ¡Gracias!', 'success');
-            fetchData();
+            await fetchData();
             return { success: true };
         } catch(e) {
             const err = e as Error;
@@ -571,9 +634,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // --- Admin Methods ---
     const deleteCustomer = async (customerId: string) => {
          try {
-            await api.deleteCustomer(customerId);
-            setCustomers(prev => prev.filter(c => c.id !== customerId));
+            const { error } = await supabase.from('users').delete().eq('id', customerId);
+            if (error) throw error;
             addToast('Cliente eliminado.', 'success');
+            await fetchAdminData();
         } catch(e) {
             addToast(`Error: ${(e as Error).message}`, 'error');
         }
@@ -583,8 +647,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const sendMessage = async (text: string, toId: string) => {
         if (!user) return;
         try {
-            const newMessage = await api.sendMessage(text, toId);
-            setMessages(prev => [...prev, newMessage]);
+            const { error } = await supabase.from('messages').insert([{ fromId: user.id, toId, text }]);
+            if (error) throw error;
+            await fetchUserData();
         } catch(e) {
              addToast(`Error enviando mensaje: ${(e as Error).message}`, 'error');
         }
@@ -592,12 +657,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const markMessagesAsRead = useCallback(async (fromId: string) => {
         if (!user) return;
         try {
-            await api.markMessagesAsRead(fromId);
-            setMessages(prev => prev.map(m => (m.toId === user!.id && m.fromId === fromId) ? {...m, read: true} : m));
+            const { error } = await supabase.from('messages').update({ read: true }).match({ toId: user.id, fromId });
+            if (error) throw error;
+            await fetchUserData();
         } catch (e) {
             // silent fail is ok here
         }
-    }, [user]);
+    }, [user, fetchUserData]);
 
     const value = {
         user, isAuthenticated, login, register, logout, updateProfile, updateUserPassword, forgotPassword,

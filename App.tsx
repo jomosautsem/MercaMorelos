@@ -1,8 +1,5 @@
-
-
 import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-// Fix: Corrected import path for AppContext
 import { AppProvider, useAppContext } from './context/AppContext';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -20,7 +17,6 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminProductsPage from './pages/admin/AdminProductsPage';
 import AdminCustomersPage from './pages/admin/AdminCustomersPage';
-// Fix: Corrected import path for ProductFormPage
 import ProductFormPage from './pages/admin/ProductFormPage';
 import AdminOrdersPage from './pages/admin/AdminOrdersPage';
 import AdminOrderDetailPage from './pages/admin/AdminOrderDetailPage';

@@ -124,6 +124,7 @@ async function syncRegistrations() {
         for (const registration of pending) {
             const { id, ...payload } = registration;
             try {
+                // This endpoint needs to exist on your server
                 const response = await fetch(`${API_BASE_URL}/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -141,7 +142,7 @@ async function syncRegistrations() {
 
                 } else {
                     const errorData = await response.json();
-                    if (response.status === 400 && errorData.message === 'User already exists') {
+                    if (response.status === 400 && errorData.message.includes('already registered')) {
                          console.log(`Service Worker: Registration for ${payload.email} failed because user exists. Removing from sync queue.`);
                          await db.pendingRegistrations.delete(id);
                          self.registration.showNotification('Fallo en el registro', {
